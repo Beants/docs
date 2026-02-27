@@ -24,22 +24,7 @@
         "groups": [
           {
             "group": "Getting started",
-            "pages": ["index", "quickstart"]
-          },
-          {
-            "group": "Guides",
-            "pages": [
-              "guides/specs",
-              "guides/tasks",
-              "guides/commands",
-              "guides/multi-agent",
-              "guides/faq",
-              {
-                "group": "Use Cases",
-                "expanded": false,
-                "pages": ["use-cases/open-typeless"]
-              }
-            ]
+            "pages": ["index", "complete-guide"]
           },
           {
             "group": "Resource Marketplace",
@@ -74,7 +59,6 @@
                 "expanded": false,
                 "pages": [
                   "blog/index",
-                  "blog/complete-guide",
                   "blog/use-k8s-to-know-trellis",
                   "blog/ai-collaborative-dev-system"
                 ]
@@ -114,22 +98,7 @@
         "groups": [
           {
             "group": "开始使用",
-            "pages": ["zh/index", "zh/quickstart"]
-          },
-          {
-            "group": "指南",
-            "pages": [
-              "zh/guides/specs",
-              "zh/guides/tasks",
-              "zh/guides/commands",
-              "zh/guides/multi-agent",
-              "zh/guides/faq",
-              {
-                "group": "使用案例",
-                "expanded": false,
-                "pages": ["zh/use-cases/open-typeless"]
-              }
-            ]
+            "pages": ["zh/index", "zh/complete-guide"]
           },
           {
             "group": "Resource Marketplace",
@@ -168,7 +137,6 @@
                 "expanded": false,
                 "pages": [
                   "zh/blog/index",
-                  "zh/blog/complete-guide",
                   "zh/blog/use-k8s-to-know-trellis",
                   "zh/blog/ai-collaborative-dev-system"
                 ]
