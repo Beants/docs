@@ -1,268 +1,174 @@
 ---
 title: 'Architecture Overview'
+description: 'Follow one Trellis request through workflow state, task persistence, context routing, execution, hooks, and workspace memory.'
 ---
 
-## Architecture Overview
+Trellis is easiest to understand by following one request from the moment you type it. The system is not a single daemon or a hidden service. It is a set of markdown contracts, task files, JSONL context manifests, local scripts, skills, sub-agents, and platform adapters that all point the AI at the right next action.
 
-### Overall Architecture
+## From one user request
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                             User                             │
-└─────────────────────────────┬────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│  Claude Code / Cursor / OpenCode / Codex / Kiro / Gemini /   │
-│  Qoder / CodeBuddy / Copilot / Droid / Pi / Kilo /           │
-│  Antigravity / Windsurf + .agents/skills ecosystem           │
-│               (AI Coding Assistant Interface)                │
-└─────────────────────────────┬────────────────────────────────┘
-                              │
-          ┌───────────────────┼──────────────────┐
-          │                   │                  │
-          ▼                   ▼                  ▼
-  ┌───────────────┐  ┌──────────────────┐  ┌─────────────────┐
-  │  Commands     │  │  Skills          │  │  Hooks          │
-  │  /trellis:*   │  │  (auto-trigger)  │  │  (hook-capable) │
-  │               │  │                  │  │                 │
-  │  start        │  │  brainstorm      │  │  SessionStart   │
-  │  finish-work  │  │  before-dev      │  │  PreToolUse     │
-  │  continue     │  │  check           │  │  UserPrompt     │
-  │               │  │  update-spec     │  │                 │
-  │  [all]        │  │  break-loop      │  │                 │
-  └───────┬───────┘  └────────┬─────────┘  └────────┬────────┘
-          │                   │                      │
-          └───────────────────┼──────────────────────┘
-                              │
-                              ▼
-      ┌──────────────────────────────────────────────────────┐
-      │                 .trellis/ Directory                  │
-      │                                                      │
-      │  spec/        workspace/      tasks/      scripts/   │
-      │  (Specs)      (Journals)      (Tasks)     (Python)   │
-      └─────────────────────────┬────────────────────────────┘
-                                │
-                                ▼
-      ┌──────────────────────────────────────────────────────┐
-      │                    Sub-agent System                  │
-      │                                                      │
-      │   trellis-research → trellis-implement → trellis-check│
-      │                                                      │
-      │   Each sub-agent receives precise context via JSONL  │
-      └─────────────────────────┬────────────────────────────┘
-                                │
-                                ▼
-      ┌──────────────────────────────────────────────────────┐
-      │                  Your Project Code                   │
-      │        (AI generates/modifies code per specs)        │
-      └──────────────────────────────────────────────────────┘
+A persisted Trellis request follows this chain:
+
+```text
+User prompt
+  -> SessionStart project map
+  -> UserPromptSubmit workflow-state breadcrumb
+  -> task persistence under .trellis/tasks/
+  -> JSONL context routing
+  -> skills and sub-agents
+  -> hooks, extensions, or pull-based platform equivalents
+  -> finish-work and workspace journal
+  -> next session starts with better memory
 ```
 
-#### `workflow.md`: the single source of truth
+Purely conversational requests can stop before task persistence. This page explains the durable-work path because that is where the architecture matters. For exhaustive file lists, hook wiring, or JSONL field references, use the reference pages linked at the end instead of treating this page as the source of every path.
 
-`.trellis/workflow.md` is the one file that defines the Plan / Execute / Finish contract — Phase 1 (1.0 `task.py create` → 1.4 `task.py start`), Phase 2 (2.1 `trellis-implement` → 2.2 `trellis-check`), Phase 3 (3.1 final check → 3.4 `/trellis:finish-work`). Every other piece of the system pulls from it:
+## Session start gives the AI the project map
 
-- **SessionStart hook** auto-injects its TOC + step-level details so AI knows the contract before you type anything.
-- **`/trellis:continue`** reads the current session runtime (`.trellis/.runtime/sessions/<session-key>.json`) + task `status`, then consults `workflow.md` to figure out which step the task is on and what the next action should be.
-- **Skills and sub-agents** receive it via JSONL (`workflow.md` is the first entry in the default `implement.jsonl`).
-- **Task state** — default statuses `planning` / `in_progress` / `completed` (set automatically by `task.py create` / `start` / `archive`) map one-to-one to the three phases in `workflow.md`. `workflow.md` has per-status reminder blocks; add custom statuses there when you need more states.
+Before the AI answers a prompt, Trellis tries to load the map of the project.
 
-Edit `workflow.md` to change the workflow for your project; every platform, skill, sub-agent, and command re-reads it on the next session. There is no other place where the workflow is hard-coded.
+On hook-capable platforms, the `SessionStart` hook or extension reads the local Trellis state and injects it into the session. On prelude-based platforms, the same idea is delivered through the platform's startup file, such as `AGENTS.md` for Codex or steering / workflow files on other tools.
 
-### Session Startup Flow
+The startup context usually includes:
 
-<Tabs>
-  <Tab title="Hook / extension capable (CC / Cursor / OC / Gemini / Qoder / CodeBuddy / Copilot / Droid / Pi)">
-    SessionStart hook or extension fires automatically, so the platform-specific `session-start.py` / `session-start.js` / Pi extension injects Trellis context at every session open with no manual step. Describe your task directly; optionally run `/trellis:start` on platforms that expose it for an explicit context report.
-  </Tab>
-  <Tab title="Codex">
-    Codex auto-reads `AGENTS.md` at the repo root every session. When `codex_hooks = true` is enabled in `~/.codex/config.toml`, the SessionStart hook also runs and behaves identically to the hook-capable tab above. Without the flag, the prelude alone covers the basics.
-  </Tab>
-  <Tab title="Kiro">
-    Kiro delivers Trellis content through its `.kiro/` skill files. Agent Hooks are user-configured in Kiro (save triggers, build triggers, etc.); Trellis does not ship any. Run `@trellis:start` when you want a full context report.
-  </Tab>
-  <Tab title="Kilo / Antigravity / Windsurf">
-    These three platforms have workflows + skills only — no hooks. Manually run the entry workflow (`/start.md` / `.agent/workflows/start.md` / `/trellis-start`); the AI reads `workflow.md` + `get_context.py` + spec indexes inline, then asks what you want to do.
-  </Tab>
-</Tabs>
+- Developer identity from `.trellis/.developer`.
+- The workflow contract from `.trellis/workflow.md`.
+- Current git branch, git status, and recent commits.
+- Active tasks under `.trellis/tasks/`.
+- The developer workspace index under `.trellis/workspace/<developer>/`.
+- Available package and spec layers from `.trellis/spec/`.
 
-When `/trellis:start` runs (or when a SessionStart hook fires automatically), here's what happens:
+The important part is not the transport. The important part is that each session starts with the same project map, so the AI can see current tasks, relevant specs, and recent work without relying on chat history.
 
-```
-/trellis:start
-     │
-     ▼
-┌────────────────────────────────────────┐
-│  Hook or command body:                 │
-│                                        │
-│  Read .trellis/.developer    → identity│
-│  Read .trellis/workflow.md   → workflow│
-│  Read workspace/{name}/index → history │
-│  Read git log               → commits  │
-│  Read .trellis/tasks/        → tasks   │
-└───────────────────┬────────────────────┘
-                    │
-                    ▼
-         ┌──────────────────────────┐
-         │  Context injected into AI│
-         └────────────┬─────────────┘
-                      │
-                      ▼
-      ┌──────────────────────────────────┐
-      │  start.md command runs:          │
-      │                                  │
-      │  Step 1: Read workflow.md        │
-      │  Step 2: Run get_context.py      │
-      │  Step 3: Read spec indexes       │
-      │  Step 4: Report & ask user       │
-      └──────────────────────────────────┘
-```
+`get_context.py` is the local API behind much of this reporting. It can emit the full session context, package/spec summaries, and phase-specific workflow detail. `init_developer.py` and `get_developer.py` keep the per-machine developer identity separate from committed project files.
 
-### Spec Injection Mechanism
+## Each prompt receives workflow state
 
-<Info>
-  Automatic sub-agent spec injection relies on the platform's PreToolUse hook or extension equivalent. Claude Code, Cursor, OpenCode, CodeBuddy, Droid, and Pi Agent support this today. On the other platforms, the main session reads the JSONL files itself and passes the relevant content into sub-agent prompts.
-</Info>
+After startup, each user message gets a smaller, more targeted nudge: the current workflow state.
 
-`inject-subagent-context` (Python on Claude Code, JS on OpenCode, extension code on Pi) is the core spec-injection engine. When the main session spawns a `trellis-*` sub-agent, the hook or extension intercepts the call and injects the right JSONL-specified context.
+`workflow.md` defines the Plan / Execute / Finish phases, skill routing, and the `<workflow-state>` breadcrumb text. When a platform supports `UserPromptSubmit`, Trellis injects the breadcrumb on every prompt. The breadcrumb tells the AI whether there is no active task, a planning task, an in-progress task, or a completed task that needs wrap-up.
 
-**Workflow**:
+The active task is session-scoped. `task.py start` records the task for the current AI session under `.trellis/.runtime/sessions/`, and `task.py current --source` exposes where that active-task state came from. This is why two AI windows can work on different tasks without overwriting each other.
 
-```
-Main session spawns: Task(subagent_type="trellis-implement", prompt="...")
-     │
-     ▼
-┌──────────────────────────────────────────────────────────────┐
-│  Hook / extension: inject-subagent-context                   │
-│  (runs BEFORE sub-agent)                                     │
-│                                                              │
-│  The hook / extension (not the sub-agent) does the reading:  │
-│                                                              │
-│  1. It reads the current session runtime                     │
-│     → .trellis/.runtime/sessions/<session-key>.json          │
-│     → current task directory path                            │
-│                                                              │
-│  2. It reads {task_dir}/implement.jsonl                      │
-│     → list of spec files this sub-agent needs                │
-│                                                              │
-│  3. It reads each file referenced in the JSONL               │
-│     → .trellis/spec/backend/index.md                         │
-│     → .trellis/spec/backend/database-guidelines.md           │
-│     → ...                                                    │
-│                                                              │
-│  4. It reads prd.md (requirements) and info.md (design)      │
-│                                                              │
-│  5. It concatenates everything and prepends it to the        │
-│     sub-agent's prompt as "additionalContext"                │
-└───────────────────────┬──────────────────────────────────────┘
-                        │
-                        ▼
-The sub-agent wakes up with this already in its prompt on hook-push and extension-backed platforms (it does not read any of the files itself). Pull-based platforms put equivalent read instructions in the sub-agent prelude:
+See [Customizing the Workflow](./custom-workflow) for how `workflow.md` controls phases and breadcrumbs, and [Custom Hooks](./custom-hooks) for the event-level hook behavior.
 
-  # trellis-implement Task
-  ## Your Context
-  === .trellis/spec/backend/index.md ===
-  (full content injected by hook)
-  === .trellis/spec/backend/database-guidelines.md ===
-  (full content injected by hook)
-  === {task_dir}/prd.md (Requirements) ===
-  (full content injected by hook)
-  ## Your Task
-  Implement the feature
-```
+## Work becomes a task when it needs persistence
 
-#### JSONL Configuration Format
+Small answers can stay in the chat. Work that needs planning, research, code changes, or later verification becomes a Trellis task under `.trellis/tasks/<date-slug>/`.
 
-JSONL (JSON Lines) files tell the hook which files to inject into each sub-agent's prompt. Each line is a JSON object:
+A task directory is the durable workspace for one piece of work:
+
+- `task.json` stores task metadata and lifecycle state.
+- `prd.md` stores the requirements the implementer must satisfy.
+- `info.md`, when present, stores technical design notes.
+- `research/` stores persisted findings from investigation.
+- `implement.jsonl`, `check.jsonl`, and `research.jsonl` route context into execution roles.
+
+`task.py` is the task lifecycle API. It creates tasks, starts the current session on a task, clears or archives tasks, lists tasks, validates JSONL, and appends context entries. The architecture point is simple: task state lives in files, and the scripts provide a stable way for commands, hooks, skills, and humans to update those files consistently.
+
+For command details, use [Appendix B](./appendix-b). For key path references, use [Appendix A](./appendix-a).
+
+## JSONL routes context instead of dumping the repository
+
+Trellis does not ask every sub-agent to read the whole repository before acting. Each task has JSONL manifests that say which rules and background material should be injected up front.
+
+The manifests are routing files:
+
+- `implement.jsonl` tells `trellis-implement` which specs and research to read before writing.
+- `check.jsonl` tells `trellis-check` which quality and verification guidance to apply.
+- `research.jsonl` gives `trellis-research` background for an investigation when needed.
+
+Use JSONL for material the agent must know before it starts:
 
 ```jsonl
-{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
-{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
-{"file": "src/services/auth.ts", "reason": "Existing auth implementation to align with"}
-{"file": ".trellis/tasks/02-27-user-login/research/", "type": "directory", "reason": "Research findings"}
+{"file": ".trellis/spec/docs-site/docs/index.md", "reason": "Docs-site writing and MDX rules"}
+{"file": ".trellis/tasks/04-29-api-choice/research/options.md", "reason": "Persisted API comparison"}
 ```
 
-**Field descriptions**:
+Do not use JSONL as a source-code dump. Raw source files and directories usually belong outside the manifest because sub-agents already have file search and read tools. They should inspect code on demand instead of carrying stale code snippets in every prompt.
 
-| Field    | Required | Description                                                                                  |
-| -------- | -------- | -------------------------------------------------------------------------------------------- |
-| `file`   | Yes      | Relative path to file or directory (relative to project root)                                |
-| `reason` | Yes      | Why this file is needed                                                                      |
-| `type`   | No       | Defaults to `"file"`. In file mode the hook reads the referenced file as-is regardless of extension (source code, JSON, etc. all work). In `"directory"` mode the hook only picks up `.md` files inside, sorted by filename, max 20 — non-`.md` files are skipped. |
+For the full JSONL reference, see [Appendix D](./appendix-d).
 
-What to put in JSONL depends on what the sub-agent needs to execute the task:
+## Skills and sub-agents execute each phase
 
-- **Specs and workflow**: `.trellis/workflow.md`, `.trellis/spec/**/index.md`, specific guideline files — shape *how* the sub-agent writes code.
-- **Existing code as reference**: a single source file (`src/services/auth.ts`) is useful when the sub-agent should align with an existing pattern. Prefer single-file entries; directory mode won't pick up `.ts` / `.py` / etc.
-- **Research findings**: `{task_dir}/research/` in directory mode pulls in every `.md` produced by `trellis-research`.
+The workflow names the role that should act at each point:
 
-**Three types of JSONL files**:
+- `trellis-brainstorm` turns unclear intent into `prd.md`, asks focused questions, and configures task context.
+- `trellis-research` investigates code, docs, or third-party behavior and writes findings into `research/`.
+- `trellis-implement` performs the implementation against `prd.md`, `info.md`, specs, and research.
+- `trellis-check` reviews the diff, runs verification, and fixes issues it finds.
+- `trellis-update-spec` decides whether a new convention or lesson should be written back into `.trellis/spec/`.
+- `trellis-break-loop` is used when repeated debugging shows that a root cause needs a deeper retrospective.
 
-| File              | Used By              | Typical Content                                     |
-| ----------------- | -------------------- | --------------------------------------------------- |
-| `implement.jsonl` | `trellis-implement`  | workflow.md + relevant specs + code pattern examples|
-| `check.jsonl`     | `trellis-check`      | quality checklist specs + test / lint rules         |
-| `research.jsonl`  | `trellis-research`   | project structure overview + investigation targets  |
+On platforms with sub-agent primitives, implement and check work is delegated to `trellis-*` sub-agents. On platforms without sub-agents, the same roles are performed inline through skills and workflow instructions. The role boundary stays the same even when the platform transport changes.
 
-**Practical example** (implement.jsonl for a backend task, after brainstorm adds context):
+For custom agent behavior, see [Custom Agents](./custom-agents). For custom skills, see [Custom Skills](./custom-skills).
 
-```jsonl
-{"file": ".trellis/workflow.md", "reason": "Project workflow and conventions"}
-{"file": ".trellis/spec/backend/index.md", "reason": "Backend development guide"}
-{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "DB patterns used by this task"}
-{"file": ".trellis/tasks/02-27-user-login/research/", "type": "directory", "reason": "Research findings from trellis-research"}
-```
+## Hooks and platform equivalents sit in the request chain
 
-Entries after the first two are task-specific and typically added with `task.py add-context`.
+Hooks are not a separate architecture layer bolted onto Trellis. They are the places where the request chain gets the context it needs:
 
-**Injection behavior per sub-agent**:
+- `SessionStart` builds the project map before the first answer.
+- `UserPromptSubmit` adds the workflow-state breadcrumb to each prompt.
+- Where the platform exposes sub-agent injection, `PreToolUse` on `Task` injects JSONL context before a Trellis sub-agent starts.
+- Extension-backed platforms, such as Pi Agent, implement equivalent behavior through an extension rather than Python hook scripts.
+- Pull-based sub-agent platforms put the same context-loading instructions inside the sub-agent prelude. The sub-agent resolves the active task, reads `prd.md`, and loads the JSONL files itself.
+- Agent-less platforms have no hook or sub-agent primitive, so the main session runs the start workflow and skills directly.
 
-- **`trellis-implement`**: injects implement.jsonl + prd.md + info.md
-- **`trellis-check`**: injects check.jsonl + prd.md (to understand intent)
-- **`trellis-research`**: injects project structure overview + research.jsonl (optional)
+That gives Trellis three delivery modes with the same underlying architecture:
 
-### Sub-agent System
+- Hook or extension push: context is injected before the AI or sub-agent acts.
+- Pull-based prelude: the AI or sub-agent is instructed to read the same files at the start of its turn.
+- Inline workflow: the main session reads the workflow and specs directly, then performs the role without delegation.
 
-Trellis ships three sub-agents, each with a focused role, explicit restrictions, and a JSONL spec injection lane:
+Use [Multi-Platform and Team Configuration](./multi-platform) for the current platform matrix and [Custom Hooks](./custom-hooks) for hook configuration details.
 
-| Sub-agent            | Role                 | Restriction             | Primary context        |
-| -------------------- | -------------------- | ----------------------- | ---------------------- |
-| `trellis-research`   | Codebase / doc search| Read-only               | `research.jsonl`       |
-| `trellis-implement`  | Writing code         | Forbidden from `git commit` | `implement.jsonl` + `prd.md` |
-| `trellis-check`      | Verify + self-fix    | Writes code only to fix | `check.jsonl` + `prd.md` |
+## Scripts are the local APIs behind the chain
 
-**Typical task flow in the main session**:
+The scripts under `.trellis/scripts/` are small local APIs used by commands, hooks, skills, and humans:
 
-```
-trellis-brainstorm skill
-  │
-  │  Clarify scope, draft prd.md, create task directory + JSONL config
-  │  Spawn trellis-research sub-agent when investigation is needed
-  │
-  ▼
-trellis-before-dev skill
-  │
-  │  Read relevant spec files before coding starts
-  │
-  ▼
-Spawn trellis-implement sub-agent
-  │
-  │  Hook injects implement.jsonl context
-  │  Sub-agent writes the code, does not git commit
-  │
-  ▼
-Spawn trellis-check sub-agent
-  │
-  │  Hook injects check.jsonl context
-  │  Runs lint / typecheck / test, compares diff vs. quality checklist
-  │  Self-fixes within its internal retry loop
-  │
-  ▼
-/trellis:finish-work
-  │
-  │  Human validates + commits, then finish-work archives the task
-  │  and appends a session entry to the workspace journal
-```
+- `task.py`: task lifecycle API for create, start, current, finish, archive, list, context validation, and context entry updates.
+- `get_context.py`: context/report API for session summaries, package/spec discovery, and workflow phase detail.
+- `add_session.py`: workspace journal API that appends a session entry and updates the developer index.
+- `init_developer.py` and `get_developer.py`: developer identity helpers for the local checkout.
+- `hooks/linear_sync.py`: optional lifecycle integration for syncing task create, start, archive, and sync events with Linear.
 
----
+The design goal is that platform-specific commands stay thin. They call these scripts instead of reimplementing task state, context discovery, or journal writing in every platform template.
+
+## Finish-work writes memory for the next session
+
+The request chain ends when work is verified and recorded.
+
+`finish-work` coordinates the final steps:
+
+1. Confirm the quality gate has passed, including relevant lint, type-check, tests, and spec compliance.
+2. Remind the human to review and commit the work. Trellis does not commit the project diff before that review.
+3. Archive completed tasks with `task.py archive`.
+4. Record the session with `add_session.py`.
+
+The journal entry lands in `.trellis/workspace/<developer>/journal-N.md`, and the workspace index is updated for future session startup. `add_session.py` writes Trellis workspace/task metadata and auto-commits those metadata changes by default unless you pass `--no-commit`; it is not the mechanism for committing implementation changes. On the next `SessionStart`, Trellis can surface that history as part of the project map.
+
+This is why Trellis treats memory as a file-system concern. Chat context may disappear, but task files, research artifacts, specs, and journals remain available to every platform.
+
+## Architecture recap
+
+| Layer                  | Main files or entry points                                      | Architectural role                                      |
+| ---------------------- | --------------------------------------------------------------- | ------------------------------------------------------- |
+| Workflow control plane | `.trellis/workflow.md`                                          | Defines phases, routing, and per-prompt breadcrumbs     |
+| Session context        | `SessionStart`, `get_context.py`, `.trellis/.developer`         | Gives the AI project identity, status, and map          |
+| Prompt-time state      | `UserPromptSubmit`, `.trellis/.runtime/sessions/`               | Keeps each prompt aligned to the current task phase     |
+| Task persistence       | `.trellis/tasks/<task>/`, `task.py`                             | Stores requirements, metadata, research, and context    |
+| Context routing        | `implement.jsonl`, `check.jsonl`, `research.jsonl`              | Chooses specs and research without dumping source code  |
+| Execution roles        | Trellis skills and `trellis-*` sub-agents                       | Separates planning, research, implementation, checking  |
+| Platform adapters      | Hooks, extensions, preludes, workflow files                     | Delivers the same workflow across different AI tools    |
+| Workspace memory       | `add_session.py`, `.trellis/workspace/<developer>/journal-N.md` | Carries finished-session knowledge into future sessions |
+| Optional integrations  | `.trellis/scripts/hooks/linear_sync.py`                         | Connects task lifecycle events to external systems      |
+
+## Reference pages
+
+- [Customizing the Workflow](./custom-workflow): edit phases, skill routing, and workflow-state breadcrumbs.
+- [Custom Hooks](./custom-hooks): hook events, hook configuration, and extension equivalents.
+- [Multi-Platform and Team Configuration](./multi-platform): current platform capabilities and layouts.
+- [Appendix A](./appendix-a): key file paths.
+- [Appendix B](./appendix-b): task and script command reference.
+- [Appendix D](./appendix-d): JSONL configuration format.
