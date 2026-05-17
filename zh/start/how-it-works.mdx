@@ -84,30 +84,6 @@ cwd
 
 下面继续走 Trellis 任务路径。
 
-## 示例：从零开始新项目
-
-这是新建产品、服务、SDK、包或内部工具时的第一轮 Trellis 流程。
-
-真实情况：要做一个 B2B Dashboard，覆盖登录、团队管理、计费、分析页面。AI 可以快速启动，但每次会话不应该重新发明目录结构、API 风格、组件模式和测试规则。
-
-起始 prompt：
-
-```text
-I am starting a new B2B dashboard from scratch. Help me set up Trellis for the first week of work.
-
-First, ask for the missing product and tech-stack decisions. Then create a small first task and the minimum specs needed for frontend structure, API shape, error handling, and test strategy.
-```
-
-工作流：
-
-1. 项目初始化后运行 `trellis init`。它会在 `.trellis/spec/` 写入默认 spec 模板（约 17 份占位文件，分 `backend/`、`frontend/`、`guides` 三层，覆盖 directory structure、error handling、logging、component guidelines、cross-layer thinking 等规则），并创建 `00-bootstrap-guidelines` 任务。
-2. 在 bootstrap 任务里跟 AI 讨论产品需求和项目技术栈，让 AI 先拿到足够上下文再动手。
-3. 可选：安装 marketplace 提供的 `cc-codex-spec-bootstrap`，让 Claude Code 和 Codex 从真实代码生成第一版 specs。安装命令：`npx skills add mindfold-ai/marketplace --skill cc-codex-spec-bootstrap`。
-4. 优先填写 `trellis init` 生成的默认 specs，按当前已经知道的内容来写，不要预先设计整个项目。
-5. 人工 review 生成的 spec 质量。
-6. 建一个能跑通端到端的最小任务。
-7. 继续运行 `/trellis:continue`；Trellis 会把任务推进到 check、update-spec、commit 和 finish。
-
 ## 4. 创建任务写入 planning 状态
 
 真正要做事时，主会话创建任务：
