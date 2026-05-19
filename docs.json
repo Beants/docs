@@ -123,6 +123,7 @@
                     "group": "Changelog",
                     "expanded": false,
                     "pages": [
+                      "changelog/v0.6.0-beta.20",
                       "changelog/v0.6.0-beta.19",
                       "changelog/v0.6.0-beta.18",
                       "changelog/v0.6.0-beta.17",
@@ -143,7 +144,6 @@
                       "changelog/v0.5.11",
                       "changelog/v0.5.10",
                       "changelog/v0.6.0-beta.6",
-
                       "changelog/v0.6.0-beta.5",
                       "changelog/v0.6.0-beta.4",
                       "changelog/v0.6.0-beta.3",
@@ -332,6 +332,7 @@
                     "group": "Changelog",
                     "expanded": false,
                     "pages": [
+                      "changelog/v0.6.0-beta.20",
                       "changelog/v0.6.0-beta.19",
                       "changelog/v0.6.0-beta.18",
                       "changelog/v0.6.0-beta.17",
@@ -352,7 +353,6 @@
                       "changelog/v0.5.11",
                       "changelog/v0.5.10",
                       "changelog/v0.6.0-beta.6",
-
                       "changelog/v0.6.0-beta.5",
                       "changelog/v0.6.0-beta.4",
                       "changelog/v0.6.0-beta.3",
@@ -547,6 +547,7 @@
                     "group": "Changelog",
                     "expanded": false,
                     "pages": [
+                      "zh/changelog/v0.6.0-beta.20",
                       "zh/changelog/v0.6.0-beta.19",
                       "zh/changelog/v0.6.0-beta.18",
                       "zh/changelog/v0.6.0-beta.17",
@@ -567,7 +568,6 @@
                       "zh/changelog/v0.5.11",
                       "zh/changelog/v0.5.10",
                       "zh/changelog/v0.6.0-beta.6",
-
                       "zh/changelog/v0.6.0-beta.5",
                       "zh/changelog/v0.6.0-beta.4",
                       "zh/changelog/v0.6.0-beta.3",
@@ -756,6 +756,7 @@
                     "group": "Changelog",
                     "expanded": false,
                     "pages": [
+                      "zh/changelog/v0.6.0-beta.20",
                       "zh/changelog/v0.6.0-beta.19",
                       "zh/changelog/v0.6.0-beta.18",
                       "zh/changelog/v0.6.0-beta.17",
@@ -776,7 +777,6 @@
                       "zh/changelog/v0.5.11",
                       "zh/changelog/v0.5.10",
                       "zh/changelog/v0.6.0-beta.6",
-
                       "zh/changelog/v0.6.0-beta.5",
                       "zh/changelog/v0.6.0-beta.4",
                       "zh/changelog/v0.6.0-beta.3",
@@ -891,7 +891,7 @@
     "links": [
       {
         "label": "Changelog",
-        "href": "/changelog/v0.6.0-beta.19"
+        "href": "/changelog/v0.6.0-beta.20"
       },
       {
         "label": "Tech Blog",
