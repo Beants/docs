@@ -48,6 +48,8 @@ The Pi extension now exposes Trellis sub-agent dispatch through `trellis_subagen
 
 `.codex/config.toml` now emits the `multi_agent_v2` wait timeout values as a valid bounds set for Codex CLI 0.131+.
 
+**Codex requirement:** this full timeout-bounds config requires Codex CLI `0.131.0` or newer. Codex CLI `0.128.0` through `0.130.x` only understands the earlier `enabled`, `max_concurrent_threads_per_session`, and `min_wait_timeout_ms` fields; those versions fail config loading when `default_wait_timeout_ms` or `max_wait_timeout_ms` is present.
+
 ```toml
 [features.multi_agent_v2]
 enabled = true
@@ -58,6 +60,7 @@ max_wait_timeout_ms = 3600000
 ```
 
 - Fixes Codex startup failure: `default_wait_timeout_ms must be at least min_wait_timeout_ms`
+- Requires Codex CLI `0.131.0+` for `default_wait_timeout_ms` and `max_wait_timeout_ms`
 - Keeps the Trellis default wait at 8 minutes
 - Keeps the explicit upper clamp at 1 hour
 - Covers fresh `trellis init` and template refresh through `trellis update`
