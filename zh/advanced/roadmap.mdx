@@ -2,35 +2,41 @@
 title: 'Roadmap'
 ---
 
-## v0.6
+## v0.6 已交付
+
+### 跨会话记忆底座（`trellis mem`）
+
+本地 CLI，索引机器上已有的 Claude Code / Codex 会话日志，提供结构化检索。`trellis mem list`、`search`、`context`、`extract`、`projects` 覆盖 session 列表、关键词搜索、上下文窗口下钻、清洗后对话导出、按项目路由。`extract --phase brainstorm|implement|all` 按 `task.py create` / `task.py start` 边界切分一次 session，AI 据此可恢复任意历史 task 的 brainstorm 段。可复用检索 / 阶段切片逻辑封装在 `@mindfoldhq/trellis-core/mem`；纯本地，不上传任何内容。
+
+### Session insight（以能力 skill 形式交付）
+
+最终以 bundled skill `trellis-session-insight` 形式交付，而不是硬编码一条 workflow 步骤。这条 skill 教 AI 何时该伸手调 `trellis mem`（过往解法回忆、决策回溯、跨会话续作、似曾相识 bug、自身模式识别、finish-work 回顾），同时**明确**不做的事：不固定写回某个文件。`mem` 返回的内容怎么用 —— 是行内引用、是更新 `prd.md` / `design.md`、是追加到 task notes、是只在脑里参考、还是交棒给 `trellis-update-spec` —— 由 AI 根据当下对话情境自行判断。
+
+### 可配置 Hooks
+
+Hook 行为由 `.trellis/config.yaml` 驱动。当前可调项：`session_commit_message`、`max_journal_lines`、`session_auto_commit`、`hooks.after_create` / `after_start` / `after_finish` / `after_archive` 这套 task 生命周期触发命令、`channel.worker_guard.idle_timeout` 与 `max_live_workers`，以及 `codex.dispatch_mode: inline | sub-agent`（控制 Codex 主 agent 是直接编辑代码还是派发到 `trellis-implement` / `trellis-check` 子 agent 的开关）。
+
+### Auto runner —— 已被替代
+
+从 roadmap 中移除。Claude Code（`/goal`）和 Codex（autonomy mode）现在都原生提供多步自主推进。Trellis 再在上面加一层 runner 不会跟平台调度器互补，反而会冲突。
+
+---
+
+## 延期
 
 ### Spec → Wiki 概念迁移
 
-参考 [Karpathy 的 LLM Wiki 模式](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)，把 `spec` 概念扩展成更通用的"项目记忆 / 知识库"层。当前 `.trellis/spec/` 只承载 coding 约束，但用户实际想往里塞的东西远超这个范围 —— 决策日志、用户访谈结论、领域知识、跨任务的"为什么这样设计"…… 这些塞 spec 不合适，单写 PRD 又留不住。
+灵感来自 [Karpathy 的 LLM Wiki 模式](https://gist.github.com/karpathy/442a6bf555914893e9891c11519de94f)：把 `spec` 概念扩展成更通用的"项目记忆 / 知识库"层，带 wikilinks、交叉引用、过期标记；spec 收窄到纯 coding 约束，wiki 承接更广义的项目记忆。
 
-同时借用 Karpathy 模式的**互相链接 + 持续维护**特性：wiki 不是一堆孤立 markdown，而是带 wikilinks、带交叉引用、带过期标记的活文档。spec 收窄到纯 coding 约束本身，wiki 接管更广义的项目记忆。
-
-### Trace + Session insight
-
-**Trace** 是跨任务可回放历史 —— 哪个 task 改了哪些文件、为什么改、引用了哪些 spec、最终被谁 review。当前的 journal 是个人会话脉络，trace 是跨开发者、跨任务的项目级活动流，方便事后回溯一个改动是怎么发生的。
-
-**Session insight** 是配套的自动提炼层：每个 task 在 `finish-work` 时自动从 PRD / diff / journal 里提取关键决策、踩过的坑、不变量等沉淀点，写回到 wiki（见上面的 Spec → Wiki 概念迁移）对应位置 —— 不依赖开发者主动记得"我得把这个经验记下来"。Trace 是流水账，session insight 是流水账上的高亮和摘要。
-
-### Auto runner
-
-多个 Task 讨论完之后自动跑完 `implement` → `check` → `finish-work` → 下一个 task 的全流程，不用每个 phase 手动 `/trellis:continue`。给信任 Trellis 的团队一条更短的路径。
-
-### Hook 更加可配置化
-
-hook 行为通过配置文件控制开关，可能考虑跟当前 session 绑定（不同会话可以开启不同的 hook 组合）。
+**状态：因产品原因延期。** 0.6 周期优先做了记忆底座（`trellis mem`）和消费它的 session-insight skill —— 这两件事已经覆盖了最常见的回忆需求，团队不需要被强制把 `spec/` 迁到新结构。Wiki 仍然在 roadmap 上，但不再卡 0.6。
 
 ---
 
 ## v0.7
 
-### 更好的记忆系统
+### 团队级 memory
 
-在 0.6 wiki 层基础上做团队级 memory（不只是个人 journal）：session insight 自动写回 wiki，跨 task / 跨成员可检索，旧仓库 / 大代码库的"找上下文"成本显著下降。这是用户访谈里反复出现的最强信号。
+跨开发者、跨 task 的 memory 检索，超出今天的个人 journal 边界。目标是把"找上下文"的成本在老仓库 / 大代码库上显著降下来。这是用户访谈里反复出现的最强信号。具体形态取决于 Wiki 是否先做（带链接的丰富记忆）还是继续延期（在 `trellis mem` 之上做更松散的聚合）。
 
 ### TDD 模板
 
