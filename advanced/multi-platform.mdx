@@ -4,7 +4,7 @@ title: 'Multi-Platform and Team Configuration'
 
 ## Multi-Platform and Team Configuration
 
-Trellis ships on 16 platforms (Claude Code, Cursor, OpenCode, Codex, Kiro, Kilo, Gemini CLI, Antigravity, Devin (formerly Windsurf), Qoder, CodeBuddy, GitHub Copilot, Droid, Pi Agent, Reasonix, ZCode) and additionally supports any AI coding agent that reads the `.agents/skills/` standard (Amp, Cline, Deep Agents, Firebender, Kimi Code CLI, Warp, and more). The `.trellis/` core is identical everywhere; what differs is **how hooks, extensions, skills, sub-agents, and commands are delivered** on each platform.
+Trellis ships on 17 platforms (Claude Code, Cursor, OpenCode, Codex, Kiro, Kilo, Gemini CLI, Antigravity, Devin (formerly Windsurf), Qoder, CodeBuddy, GitHub Copilot, Droid, Pi Agent, Oh My Pi, Reasonix, ZCode) and additionally supports any AI coding agent that reads the `.agents/skills/` standard (Amp, Cline, Deep Agents, Firebender, Kimi Code CLI, Warp, and more). The `.trellis/` core is identical everywhere; what differs is **how hooks, extensions, skills, sub-agents, and commands are delivered** on each platform.
 
 ### Joining an Already-Initialized Trellis Project
 
@@ -37,13 +37,13 @@ After that, on platforms with a SessionStart hook or extension, opening a new se
 
 ### Capability Matrix
 
-| Capability                     | Claude Code | Cursor | OpenCode | Codex | Kiro | Gemini | Qoder | CodeBuddy | Copilot | Droid | Pi Agent |
-| ------------------------------ | :---------: | :----: | :------: | :---: | :--: | :----: | :---: | :-------: | :-----: | :---: | :------: |
-| SessionStart / startup context |     ✅      |   ✅   |    ✅    |  ⚡   |  ⚡  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |
-| Sub-agent context injection    |     ✅      |   ✅   |    ✅    |  ❌   |  ❌  |   ❌   |  ❌   |    ✅     |   ❌    |  ✅   |    ✅    |
-| Sub-agents (`trellis-*`)       |     ✅      |   ✅   |    ✅    |  ✅   |  ✅  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |
-| Auto-trigger skills            |     ✅      |   ✅   |    ✅    |  ✅   |  ✅  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |
-| Explicit `/trellis:*` commands |     ✅      |   ✅   |    ✅    |   —   |  —   |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |
+| Capability                     | Claude Code | Cursor | OpenCode | Codex | Kiro | Gemini | Qoder | CodeBuddy | Copilot | Droid | Pi Agent | Oh My Pi |
+| ------------------------------ | :---------: | :----: | :------: | :---: | :--: | :----: | :---: | :-------: | :-----: | :---: | :------: | :------: |
+| SessionStart / startup context |     ✅      |   ✅   |    ✅    |  ⚡   |  ⚡  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
+| Sub-agent context injection    |     ✅      |   ✅   |    ✅    |  ❌   |  ❌  |   ❌   |  ❌   |    ✅     |   ❌    |  ✅   |    ✅    |    ✅    |
+| Sub-agents (`trellis-*`)       |     ✅      |   ✅   |    ✅    |  ✅   |  ✅  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
+| Auto-trigger skills            |     ✅      |   ✅   |    ✅    |  ✅   |  ✅  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
+| Explicit `/trellis:*` commands |     ✅      |   ✅   |    ✅    |   —   |  —   |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
 
 Legend: ✅ Trellis wires the config and the platform executes it · ⚡ Partial
 (Codex uses `AGENTS.md` plus `UserPromptSubmit`; workflow breadcrumbs require
@@ -237,6 +237,23 @@ Layout:
 
 The extension stores active task state under `.trellis/.runtime/sessions/<session-key>.json`, so each Pi window/session can work on its own task without taking over another window.
 
+### Oh My Pi
+
+```bash
+trellis init -u your-name --omp
+```
+
+Oh My Pi is extension-backed, like Pi Agent. Trellis writes the same workflow primitives, then the extension resolves the current session id and injects task context before Bash commands and sub-agent runs. Unlike Pi Agent, Oh My Pi has no `settings.json` — the native provider auto-discovers all subdirectories under `.omp/`.
+
+Layout:
+
+- `.omp/commands/trellis-{name}.md`: session-boundary prompts (`finish-work`, `continue`; `start` only where applicable)
+- `.omp/skills/trellis-{name}/SKILL.md`: the five Trellis workflow skills
+- `.omp/agents/{name}.md`: `trellis-implement`, `trellis-check`, `trellis-research`
+- `.omp/extensions/trellis/index.ts`: session context, Bash `TRELLIS_CONTEXT_ID` propagation, and sub-agent JSONL injection
+
+The extension stores active task state under `.trellis/.runtime/sessions/<session-key>.json`, so each Oh My Pi window/session can work on its own task without taking over another window.
+
 ### Other supported platforms
 
 Trellis also ships configurators for platforms not covered by the capability matrix:
@@ -245,7 +262,7 @@ Trellis also ships configurators for platforms not covered by the capability mat
 - **Antigravity** (`--antigravity`): writes Antigravity-native workflow files for the three commands.
 - **Devin** (`--devin`, formerly Windsurf): writes Devin-native workflow and skill files. The old `--windsurf` flag still works as a deprecated alias.
 
-Beyond the 16 configured platforms, Trellis can be consumed by any AI coding agent that follows the `.agents/skills/` convention (the [agentskills.io](https://agentskills.io) standard). Codex writes its skills there, and the files are directly usable by other agents in that ecosystem (Amp, Cline, Deep Agents, Firebender, Kimi Code CLI, Warp, and more). On those platforms you manage Trellis through the `.trellis/` core plus whatever prelude file the agent reads.
+Beyond the 17 configured platforms, Trellis can be consumed by any AI coding agent that follows the `.agents/skills/` convention (the [agentskills.io](https://agentskills.io) standard). Codex writes its skills there, and the files are directly usable by other agents in that ecosystem (Amp, Cline, Deep Agents, Firebender, Kimi Code CLI, Warp, and more). On those platforms you manage Trellis through the `.trellis/` core plus whatever prelude file the agent reads.
 
 ### Operating Systems
 
