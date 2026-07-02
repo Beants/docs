@@ -1,5 +1,5 @@
 ---
-title: '命令、任务与规范'
+title: '命令、升级、任务与规范'
 ---
 
 ## 1. 命令与 Skill 参考
@@ -11,8 +11,8 @@ title: '命令、任务与规范'
 | 类型        | 名称                   | 触发                                    | 用途                                                               |
 | ----------- | ---------------------- | --------------------------------------- | ------------------------------------------------------------------ |
 | **Command** | `/trellis:start`       | 手动（支持 hook 的平台会自动注入）      | 开启会话、加载上下文、任务分类                                     |
-| **Command** | `/trellis:continue`    | 手动                                    | 当前任务内推进下一步工作流，用户不用记 workflow（详见 1.2.4 小节） |
 | **Command** | `/trellis:finish-work` | 手动，在 Phase 3.4 commit 落地之后      | 归档 task + 写入 session journal                                   |
+| **Command** | `/trellis:continue`    | 手动                                    | 当前任务内推进下一步工作流，用户不用记 workflow（详见 1.2.6 小节） |
 | **CLI**     | `trellis upgrade`      | 手动，全局 CLI package 过旧时           | 升级已安装的 Trellis CLI package                                   |
 | **Skill**   | `trellis-brainstorm`   | 同意创建任务并进入 planning 后触发      | 澄清需求、查证据、起草 planning artifacts                          |
 | **Skill**   | `trellis-before-dev`   | task 中动手改代码前自动触发             | 先读相关 spec 再写代码                                             |
@@ -55,7 +55,26 @@ trellis upgrade --dry-run    # 只打印 npm 命令，不实际执行
 
 `trellis upgrade` 升级的是全局 CLI package，不会改当前项目里的文件。CLI 升级后，如果某个 Trellis 项目需要同步新的 workflow、hook、skill 或平台文件，再在该项目里运行 `trellis update`。
 
-#### 1.2.3 `/trellis:start`：开启会话
+#### 1.2.3 `trellis update`：把项目同步到 CLI 版本
+
+升级完 CLI 后，在 Trellis 项目里运行。它把 `.trellis/` 模板和平台文件（hook、skill、command）同步到本地 CLI 的版本：
+
+```bash
+trellis update               # 把项目同步到本地 CLI 的模板版本
+trellis update --dry-run     # 只预览改动，不实际执行
+trellis update --migrate     # 同时执行文件迁移（改名 / 挪位置 / 删除）
+```
+
+`trellis update` 只碰你没改过的文件——自定义内容不会丢，改动前还会自动创建带时间戳的备份。
+
+<Warning>
+  如果 update 输出最后出现 **`MIGRATION REQUIRED`**（项目版本和 CLI 之间存在 breaking 变更，比如
+  `0.4.0 → 0.6.5`），必须运行 `trellis update --migrate`。不加 `--migrate` 的话，breaking
+  版本里改名或挪位置的文件**不会**被移动——项目里会留着一堆旧路径的过期文件，和新模板混在一起。可以先用
+  `--dry-run` 预览 `--migrate` 会做什么。
+</Warning>
+
+#### 1.2.4 `/trellis:start`：开启会话
 
 如果平台不自动注入上下文就手动跑一下。Hook 或 extension 可用的平台（Claude Code、Cursor、OpenCode、Gemini、Qoder、CodeBuddy、Copilot、Droid、Pi Agent，以及开了 `features.hooks = true` 的 Codex —— 旧版用 `codex_hooks = true`）有 SessionStart hook 或 extension，打开终端就自动执行，所以通常不会安装用户可见的 `start` 命令。
 
@@ -76,19 +95,6 @@ AI 做的任务分类：
 
 用户拒绝复杂任务建 task 时，AI 应该澄清范围或建议拆小，而不是做大范围 inline 实现。
 
-#### 1.2.4 `/trellis:continue`：当前任务内推进下一步
-
-`continue` 是**单个任务内**的 continue，不是跨任务的 continue。AI 根据当前 task 的 `task.json.status` 和每轮 hook 注入的 workflow-state breadcrumb，对照 `workflow.md` 判断当前在哪个 phase/step，然后推进到下一步。
-
-典型一次 task 的对话：
-
-1. 你用自然语言描述需求 → AI 先分类请求；当 Trellis 有价值时，先询问是否创建 task。你同意后，`trellis-brainstorm` 创建 task 并起草 `prd.md`。
-2. `prd.md` 跟你确认完，你输入 `continue` → 它判断任务是轻量任务，还是需要补 `design.md` 和 `implement.md`。
-3. Planning artifacts review 通过后再输入 `continue` → 它 start task 并进入 implement/check。Sub-agent mode 会整理 `implement.jsonl` / `check.jsonl`；inline mode 直接读取 artifacts/specs。
-4. sub-agent 跑完你再 `continue` → 它知道该走 `trellis-update-spec`，最后 `finish-work`。
-
-以前你得自己学 workflow、记住每个阶段该调哪个 slash command 让 AI 干对应的事；现在一路自然对话 + `continue`，几乎零学习成本就能跑完整个 trellis 工作流。
-
 #### 1.2.5 `/trellis:finish-work`：收尾 + 归档
 
 前提：代码已经 commit。AI 在 workflow Phase 3.4（见 `.trellis/workflow.md`）里主导批量 commit —— 起草本次 session 改动的 commit 计划、参考 `git log --oneline -5` 学习 repo 的 commit message 风格、一次性展示计划让用户 confirm、确认后逐批 `git commit`。`/finish-work` 自身只做 archive + journal，**工作区还有未提交代码改动时拒绝执行**，保证 bookkeeping commit 永远在 work commit 之后。
@@ -101,6 +107,19 @@ AI 做的任务分类：
 4. 用 `add_session.py --title … --commit …` 追加一条 journal（产生 `chore: record journal` commit）。
 
 最终 git log 顺序：`<3.4 阶段的 work commits>` → `chore(task): archive ...`（可能多条）→ `chore: record journal`。把本次经验沉淀进 `trellis-update-spec` 属于 workflow Phase 3.3 在 commit 之前的事，不在这个 skill 的职责里。
+
+#### 1.2.6 `/trellis:continue`：当前任务内推进下一步
+
+`continue` 是**单个任务内**的 continue，不是跨任务的 continue。AI 根据当前 task 的 `task.json.status` 和每轮 hook 注入的 workflow-state breadcrumb，对照 `workflow.md` 判断当前在哪个 phase/step，然后推进到下一步。
+
+典型一次 task 的对话：
+
+1. 你用自然语言描述需求 → AI 先分类请求；当 Trellis 有价值时，先询问是否创建 task。你同意后，`trellis-brainstorm` 创建 task 并起草 `prd.md`。
+2. `prd.md` 跟你确认完，你输入 `continue` → 它判断任务是轻量任务，还是需要补 `design.md` 和 `implement.md`。
+3. Planning artifacts review 通过后再输入 `continue` → 它 start task 并进入 implement/check。Sub-agent mode 会整理 `implement.jsonl` / `check.jsonl`；inline mode 直接读取 artifacts/specs。
+4. sub-agent 跑完你再 `continue` → 它知道该走 `trellis-update-spec`，最后 `finish-work`。
+
+以前你得自己学 workflow、记住每个阶段该调哪个 slash command 让 AI 干对应的事；现在一路自然对话 + `continue`，几乎零学习成本就能跑完整个 trellis 工作流。
 
 ### 1.3 Auto-trigger Skills
 

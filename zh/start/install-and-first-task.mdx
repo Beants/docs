@@ -35,6 +35,23 @@ trellis init -u your-name --pi
 
 除了这 16 个已配置平台，任何读取 `.agents/skills/` 规范的 AI 编码 agent（Amp、Cline、Deep Agents、Firebender、Kimi Code CLI、Warp 等）也能直接消费 Trellis：Codex 的 skill 就写在这个目录下，这些文件能被该生态的其他 agent 直接读取。
 
+### 升级
+
+升级是**两步**——CLI 和项目里的 `.trellis/` 模板是分开版本化的：
+
+```bash
+trellis upgrade   # 1. 升级全局 CLI package
+trellis update    # 2. 在每个项目里：把 .trellis/ 和平台文件同步到新 CLI
+```
+
+<Warning>
+  如果 `trellis update` 提示 **`MIGRATION REQUIRED`**（项目版本和 CLI 之间存在 breaking
+  变更），必须运行 `trellis update --migrate`——否则 breaking
+  版本里改名或挪位置的文件会留在旧路径上不动。
+</Warning>
+
+完整的 `upgrade` / `update` / `--migrate` 说明见[命令 §1.2](/zh/start/everyday-use#1-2-命令)。
+
 ### 平台配置
 
 `trellis init` 为每个平台写入各自的配置目录。`.trellis/` 下的核心概念跨平台一致，差异在于 command、skill、sub-agent、hook 的交付方式。
