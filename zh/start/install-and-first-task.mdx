@@ -221,14 +221,14 @@ your-project/
 
   </Tab>
   <Tab title="Codex">
-  在 `~/.codex/config.toml` 开启：
+  **必须在 `~/.codex/config.toml` 开启 hook，否则聊天界面输入 `/` 检索不到 Trellis 的三大命令（`/start`、`/finish-work`、`/continue`），也无法用 `/start` 启动会话。**
 
 ```toml
 [features]
 hooks = true   # Codex 0.129+。旧版用 `codex_hooks = true`。
 ```
 
-Codex 0.129+ 还要在 TUI 里跑一次 `/hooks` 命令，审批 Trellis 安装的 `UserPromptSubmit` hook，否则 hook 不会激活、workflow 指引不会自动注入。Trellis 内置 fallback 会在 hook 没触发时让 AI 手动读 `trellis-start` skill，所以工作流仍然能跑，只是体验下降。
+Codex 0.129+ 还要在 TUI 里跑一次 `/hooks` 命令，审批 Trellis 安装的 `UserPromptSubmit` hook，否则 hook 不会激活、Trellis 的 command / skill 不会出现在 `/` 菜单、workflow 指引也不会自动注入。即便没开，Trellis 内置 fallback 会让 AI 手动读 `trellis-start` skill（靠 `AGENTS.md` prelude），上下文仍在——但你没法从 `/` 里点用 Trellis 命令，体验明显下降。
 
 之后直接描述任务即可。Codex 会自动读取 `AGENTS.md`，`UserPromptSubmit`
 hook 会注入当前 workflow-state breadcrumb。没有 active task 时，这段 breadcrumb

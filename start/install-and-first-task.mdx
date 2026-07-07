@@ -228,14 +228,14 @@ startup path already handles orientation.
 
   </Tab>
   <Tab title="Codex">
-  Enable in `~/.codex/config.toml`:
+  **You must enable hooks in `~/.codex/config.toml`, or typing `/` in the chat won't surface Trellis's three commands (`/start`, `/finish-work`, `/continue`) and you can't launch a session with `/start`.**
 
 ```toml
 [features]
 hooks = true   # Codex 0.129+. Older versions: `codex_hooks = true`.
 ```
 
-Codex 0.129+ also gates each installed hook behind a one-time `/hooks` TUI review. Open Codex once, run `/hooks`, and approve the Trellis `UserPromptSubmit` hook. Until you do, the workflow breadcrumb won't auto-inject; Trellis includes a fallback that directs the AI to read the `trellis-start` skill manually so the workflow still runs, just less smoothly.
+Codex 0.129+ also gates each installed hook behind a one-time `/hooks` TUI review. Open Codex once, run `/hooks`, and approve the Trellis `UserPromptSubmit` hook. Until you do, the hooks stay inactive, Trellis's commands/skills won't appear in the `/` menu, and the workflow breadcrumb won't auto-inject. Even without them, a fallback (the `AGENTS.md` prelude) lets the AI read the `trellis-start` skill manually so context is still there — but you can't invoke Trellis commands from `/`, which is a noticeably worse experience.
 
 After that, describe your task directly. Codex reads `AGENTS.md` automatically,
 and the `UserPromptSubmit` hook injects the current workflow-state breadcrumb.
