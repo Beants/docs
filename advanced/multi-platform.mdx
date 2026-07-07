@@ -121,14 +121,14 @@ Layout:
 - `.codex/hooks/session-start.py`: retained compact SessionStart compatibility script, not wired by default
 
 <Note>
-Codex hooks require enabling. Add to `~/.codex/config.toml`:
+**Codex hooks must be enabled, or typing `/` in the chat won't surface Trellis's three commands (`/start`, `/finish-work`, `/continue`) and you can't launch a session with `/start`.** Add to `~/.codex/config.toml`:
 
 ```toml
 [features]
 hooks = true   # Codex 0.129+. Older versions: `codex_hooks = true`.
 ```
 
-Codex 0.129+ also gates each installed hook behind a one-time `/hooks` TUI review — run `/hooks` once in Codex and approve the Trellis `UserPromptSubmit` hook, otherwise the workflow breadcrumb won't auto-inject. Without these, Codex falls back to prelude-only (reads `AGENTS.md` every session): same content, just no event-driven injection.
+Codex 0.129+ also gates each installed hook behind a one-time `/hooks` TUI review — run `/hooks` once in Codex and approve the Trellis `UserPromptSubmit` hook, otherwise the hooks stay inactive, Trellis's commands/skills won't appear in the `/` menu, and the workflow breadcrumb won't auto-inject. Without these two steps Codex runs prelude-only (reads `AGENTS.md` every session): the context is still there, but you can't invoke Trellis commands from `/`.
 
 </Note>
 
