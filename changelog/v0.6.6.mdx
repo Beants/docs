@@ -1,0 +1,63 @@
+---
+title: 'v0.6.6'
+description: '2026-07-09'
+---
+
+Patch release with Oh My Pi platform support, cache-stable Pi runtime context, corrected ZCode paths, safer channel sessions, and task CLI cleanup. Run `trellis update` to refresh existing projects. New installs do not need `--migrate`; ZCode users on 0.6.3-0.6.5 should run `trellis update --migrate` once if `.zcode/cli/agents/` exists.
+
+## Enhancements
+
+### Oh My Pi platform support
+
+Trellis now supports Oh My Pi as a first-class platform.
+
+`trellis init --omp` writes:
+
+- `.omp/agents/` for `trellis-implement`, `trellis-check`, and `trellis-research`
+- `.omp/commands/` for Trellis workflow commands
+- `.omp/skills/` for Trellis workflow and bundled skills
+- `.omp/extensions/trellis/` for runtime context injection
+
+OMP is registered in the generated `cli_adapter.py` and `task_store.py`, so OMP projects receive Trellis workflow routing and task JSONL context where sub-agents need it.
+
+## Bug Fixes
+
+### Pi runtime context
+
+Pi extension output now keeps `systemPrompt` byte-stable across turns. Startup and task context are memoized, while mutable workflow, session, and task updates are delivered through persistent hidden messages. This preserves provider prefix-cache eligibility while still keeping Trellis context current.
+
+### Oh My Pi runtime context
+
+The OMP extension now injects session-start, task, and sub-agent context through the platform runtime instead of relying on stale session identity fallbacks. Generated OMP command files also include YAML frontmatter, and implement/research agents use the `pi/task` model hint.
+
+### ZCode layout
+
+ZCode-managed Trellis skills now live under `.zcode/skills/`, and ZCode sub-agents live under `.zcode/agents/`. The generated ZCode agent set now includes `trellis-research`, and `.zcode` is treated as sub-agent-capable when Trellis decides whether to seed `implement.jsonl` / `check.jsonl`.
+
+### Channel sessions
+
+Channel workers on Windows now resolve npm `.cmd` and node-script shims before spawning Codex workers. Channel stdout event writes are serialized so concurrent output cannot corrupt event records.
+
+### Task creation
+
+`task.py create` now rejects or normalizes explicit `--slug` values that already include an `MM-DD-` prefix, warns on blank descriptions, makes automatic session activation visible, and adds `--no-start` for backlog creation without moving the current session pointer.
+
+### Codex inline mode
+
+Codex inline mode no longer receives seed-only `implement.jsonl` / `check.jsonl` files just because `.codex/` exists. Trellis only seeds those files for Codex when `codex.dispatch_mode: sub-agent` is explicitly configured.
+
+### Session and hook templates
+
+Session journals now use explicit fallback text instead of placeholders. Copilot instructions preserve repo-authored content while Trellis manages only its own guidance block, and shared hooks keep fail-open behavior without catching `BaseException`.
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+- **Oh My Pi** users: run `trellis init --omp` in projects that do not yet have `.omp/`; existing OMP dogfood projects should run `trellis update`.
+- **ZCode** users on 0.6.3-0.6.5: run `trellis update --migrate` once if `.zcode/cli/agents/` exists. This moves legacy sub-agents to `.zcode/agents/`.
+- **Pi** users: run `trellis update` to receive the cache-stable extension runtime.
+- **Codex inline** users: run `trellis update` so new tasks stop receiving seed-only JSONL context files.

@@ -1,0 +1,63 @@
+---
+title: 'v0.6.6'
+description: '2026-07-09'
+---
+
+补丁版本，包含 Oh My Pi 平台支持、Pi runtime context 缓存稳定性修复、ZCode 路径修正、更可靠的 channel session，以及 task CLI 清理。已有项目运行 `trellis update` 刷新即可。新安装无需 `--migrate`；0.6.3-0.6.5 的 ZCode 用户如果存在 `.zcode/cli/agents/`，需要运行一次 `trellis update --migrate`。
+
+## Enhancements
+
+### Oh My Pi 平台支持
+
+Trellis 现在把 Oh My Pi 作为一等平台支持。
+
+`trellis init --omp` 会写入：
+
+- `.omp/agents/`，包含 `trellis-implement`、`trellis-check` 和 `trellis-research`
+- `.omp/commands/`，包含 Trellis workflow commands
+- `.omp/skills/`，包含 Trellis workflow skills 和 bundled skills
+- `.omp/extensions/trellis/`，用于 runtime context 注入
+
+OMP 已注册到生成的 `cli_adapter.py` 和 `task_store.py` 中，因此 OMP 项目可以获得 Trellis workflow routing，并在 sub-agent 需要时生成任务 JSONL context。
+
+## Bug Fixes
+
+### Pi runtime context
+
+Pi extension 现在会让 `systemPrompt` 在多轮对话中保持字节稳定。Startup 和 task context 会被 memoize；可变的 workflow、session、task 更新则通过持久化隐藏消息传递。这样既保留 provider prefix-cache 命中条件，也能持续更新 Trellis context。
+
+### Oh My Pi runtime context
+
+OMP extension 现在通过平台 runtime 注入 session-start、task 和 sub-agent context，不再依赖 stale session identity fallback。生成的 OMP command 文件也包含 YAML frontmatter，implement/research agents 使用 `pi/task` model hint。
+
+### ZCode 布局
+
+ZCode 管理的 Trellis skills 现在位于 `.zcode/skills/`，ZCode sub-agents 位于 `.zcode/agents/`。生成的 ZCode agent 集合现在包含 `trellis-research`，并且 Trellis 在判断是否需要生成 `implement.jsonl` / `check.jsonl` 时会把 `.zcode` 视作 sub-agent-capable。
+
+### Channel sessions
+
+Windows 上的 channel workers 现在会在启动 Codex worker 前解析 npm `.cmd` 和 node-script shim。Channel stdout event 写入也改为串行，避免并发输出破坏 event records。
+
+### Task creation
+
+`task.py create` 现在会拒绝或规范化显式传入的、已经包含 `MM-DD-` 前缀的 `--slug`，会对空 description 给出警告，会明确显示自动 session activation，并新增 `--no-start`，用于批量创建 backlog 时不移动当前 session pointer。
+
+### Codex inline mode
+
+Codex inline mode 不再因为 `.codex/` 存在就收到 seed-only `implement.jsonl` / `check.jsonl` 文件。只有显式配置 `codex.dispatch_mode: sub-agent` 时，Trellis 才会为 Codex 生成这些文件。
+
+### Session and hook templates
+
+Session journal 现在使用明确的 fallback text，不再写入 placeholder。Copilot instructions 会保留仓库原有内容，Trellis 只管理自己的 guidance block；shared hooks 保持 fail-open 行为，但不再捕获 `BaseException`。
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+- **Oh My Pi** 用户：尚未配置 `.omp/` 的项目运行 `trellis init --omp`；已有 OMP dogfood 项目运行 `trellis update`。
+- **ZCode** 0.6.3-0.6.5 用户：如果存在 `.zcode/cli/agents/`，运行一次 `trellis update --migrate`，把 legacy sub-agents 移到 `.zcode/agents/`。
+- **Pi** 用户：运行 `trellis update` 获取 cache-stable extension runtime。
+- **Codex inline** 用户：运行 `trellis update`，让新任务不再收到 seed-only JSONL context files。
