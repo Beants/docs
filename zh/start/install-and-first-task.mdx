@@ -35,6 +35,23 @@ trellis init -u your-name --pi
 
 除了这 17 个已配置平台，任何读取 `.agents/skills/` 规范的 AI 编码 agent（Amp、Cline、Deep Agents、Firebender、Kimi Code CLI、Warp 等）也能直接消费 Trellis：Codex 的 skill 就写在这个目录下，这些文件能被该生态的其他 agent 直接读取。
 
+### 升级
+
+升级是**两步**——CLI 和项目里的 `.trellis/` 模板是分开版本化的：
+
+```bash
+trellis upgrade   # 1. 升级全局 CLI package
+trellis update    # 2. 在每个项目里：把 .trellis/ 和平台文件同步到新 CLI
+```
+
+<Warning>
+  如果 `trellis update` 提示 **`MIGRATION REQUIRED`**（项目版本和 CLI 之间存在 breaking
+  变更），必须运行 `trellis update --migrate`——否则 breaking
+  版本里改名或挪位置的文件会留在旧路径上不动。
+</Warning>
+
+完整的 `upgrade` / `update` / `--migrate` 说明见[命令 §1.2](/zh/start/everyday-use#1-2-命令)。
+
 ### 平台配置
 
 `trellis init` 为每个平台写入各自的配置目录。`.trellis/` 下的核心概念跨平台一致，差异在于 command、skill、sub-agent、hook 的交付方式。
@@ -205,14 +222,14 @@ your-project/
 
   </Tab>
   <Tab title="Codex">
-  在 `~/.codex/config.toml` 开启：
+  **必须在 `~/.codex/config.toml` 开启 hook，否则聊天界面输入 `/` 检索不到 Trellis 的三大命令（`/start`、`/finish-work`、`/continue`），也无法用 `/start` 启动会话。**
 
 ```toml
 [features]
 hooks = true   # Codex 0.129+。旧版用 `codex_hooks = true`。
 ```
 
-Codex 0.129+ 还要在 TUI 里跑一次 `/hooks` 命令，审批 Trellis 安装的 `UserPromptSubmit` hook，否则 hook 不会激活、workflow 指引不会自动注入。Trellis 内置 fallback 会在 hook 没触发时让 AI 手动读 `trellis-start` skill，所以工作流仍然能跑，只是体验下降。
+Codex 0.129+ 还要在 TUI 里跑一次 `/hooks` 命令，审批 Trellis 安装的 `UserPromptSubmit` hook，否则 hook 不会激活、Trellis 的 command / skill 不会出现在 `/` 菜单、workflow 指引也不会自动注入。即便没开，Trellis 内置 fallback 会让 AI 手动读 `trellis-start` skill（靠 `AGENTS.md` prelude），上下文仍在——但你没法从 `/` 里点用 Trellis 命令，体验明显下降。
 
 之后直接描述任务即可。Codex 会自动读取 `AGENTS.md`，`UserPromptSubmit`
 hook 会注入当前 workflow-state breadcrumb。没有 active task 时，这段 breadcrumb

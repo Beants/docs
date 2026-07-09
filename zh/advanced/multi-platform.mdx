@@ -115,14 +115,14 @@ trellis init -u your-name --codex
 - `.codex/hooks/session-start.py`：保留的紧凑 SessionStart 兼容脚本，默认不 wiring
 
 <Note>
-Codex hook 需要开启。在 `~/.codex/config.toml` 加：
+**Codex hook 必须开启，否则聊天界面输入 `/` 检索不到 Trellis 的三大命令（`/start`、`/finish-work`、`/continue`），也无法用 `/start` 启动会话。** 在 `~/.codex/config.toml` 加：
 
 ```toml
 [features]
 hooks = true   # Codex 0.129+。旧版用 `codex_hooks = true`。
 ```
 
-Codex 0.129+ 还要在 TUI 里跑一次 `/hooks` 命令，审批 Trellis 安装的 `UserPromptSubmit` hook，否则 hook 不会激活、workflow 指引不会自动注入。不开启时 Codex 走纯 prelude（每次读 `AGENTS.md`），内容一致，只是没有事件驱动注入。
+Codex 0.129+ 还要在 TUI 里跑一次 `/hooks` 命令，审批 Trellis 安装的 `UserPromptSubmit` hook，否则 hook 不会激活、Trellis 的 command / skill 不会出现在 `/` 菜单、workflow 指引也不会自动注入。不开启这两项时，Codex 只走纯 prelude（每次读 `AGENTS.md`）——上下文还在，但你无法从 `/` 里点用 Trellis 命令。
 
 </Note>
 
