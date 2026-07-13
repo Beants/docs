@@ -1,0 +1,39 @@
+---
+title: 'v0.6.7'
+description: '2026-07-13'
+---
+
+Patch release with project-local Pi memory discovery and filesystem-safety fixes for channel, update, uninstall, task archive, state writes, and template downloads. Run `trellis update` to refresh existing projects. No `--migrate` required.
+
+## Enhancements
+
+### Pi memory session discovery
+
+`trellis mem` now reads Pi session storage from both global `~/.pi/agent/settings.json` and project-local `.pi/settings.json`. Relative `sessionDir` values resolve from the directory containing the settings file, matching Pi's settings behavior.
+
+## Bug Fixes
+
+### Channel path validation
+
+`trellis channel` now rejects channel and worker names that are unsafe filesystem path segments. Cross-channel discovery skips legacy directories whose names do not pass the same validation instead of aborting the scan.
+
+### State and template writes
+
+Generated files, `.trellis/.template-hashes.json`, registry config, `task.json`, and session pointers now use atomic replace operations. `downloadWithStrategy(..., "overwrite")` downloads into a temporary directory before replacing existing templates, and temporary-directory cleanup errors no longer mask the download result.
+
+### Destructive command guards
+
+Trellis now protects user-owned data across destructive operations:
+
+- `trellis uninstall` removes only the managed block from `AGENTS.md` and refuses unattended `--yes` removal when `.trellis/spec/`, `.trellis/tasks/`, or `.trellis/workspace/` contains uncommitted files.
+- `task.py archive` accepts only real task directories under `.trellis/tasks/`.
+- `trellis update` keeps an existing `journal-N.md` during the legacy `traces-N.md` rename and only applies `rename-dir` automatically to directories tracked as Trellis-owned.
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+No `--migrate` required. Pi users with project-local session storage can run `trellis mem` from that project after upgrading.

@@ -1,0 +1,39 @@
+---
+title: 'v0.6.7'
+description: '2026-07-13'
+---
+
+补丁版本，包含 Pi 项目级 memory session discovery，以及 channel、update、uninstall、task archive、state writes 和 template downloads 的文件系统安全修复。已有项目运行 `trellis update` 刷新即可，无需 `--migrate`。
+
+## Enhancements
+
+### Pi memory session discovery
+
+`trellis mem` 现在会从全局 `~/.pi/agent/settings.json` 和项目级 `.pi/settings.json` 读取 Pi session storage。相对 `sessionDir` 会从 settings 文件所在目录解析，与 Pi 的 settings 行为一致。
+
+## Bug Fixes
+
+### Channel path validation
+
+`trellis channel` 现在会拒绝不能作为安全文件系统路径段的 channel 和 worker 名称。Cross-channel discovery 会跳过不满足同一校验规则的 legacy directories，而不是中止扫描。
+
+### State and template writes
+
+生成文件、`.trellis/.template-hashes.json`、registry config、`task.json` 和 session pointers 现在使用 atomic replace。`downloadWithStrategy(..., "overwrite")` 会先下载到临时目录，再替换现有 templates；临时目录清理错误也不再掩盖 download result。
+
+### Destructive command guards
+
+Trellis 现在会在 destructive operations 中保护用户数据：
+
+- `trellis uninstall` 只移除 `AGENTS.md` 中的 managed block；当 `.trellis/spec/`、`.trellis/tasks/` 或 `.trellis/workspace/` 存在未提交文件时，拒绝 unattended `--yes` 删除。
+- `task.py archive` 只接受 `.trellis/tasks/` 下真实存在的 task directories。
+- `trellis update` 在 legacy `traces-N.md` rename 时保留已有的 `journal-N.md`，并且只对记录为 Trellis-owned 的目录自动执行 `rename-dir`。
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+无需 `--migrate`。使用项目级 session storage 的 Pi 用户升级后，可以直接在对应项目中运行 `trellis mem`。
