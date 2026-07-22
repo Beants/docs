@@ -1,0 +1,61 @@
+---
+title: 'v0.6.8'
+description: '2026-07-22'
+---
+
+补丁版本:新增两个平台(Grok Build、Kimi Code)、Codex 原生子代理分发、机器可读的平台/任务状态,以及 Pi 共享 skills 迁移。Pi 用户请运行 `trellis update --migrate`;其他项目运行 `trellis update`。
+
+## Enhancements
+
+### Grok Build 平台
+
+`trellis init --grok` 将 Grok Build(xAI CLI)配置为 class-2 拉取式平台:`.grok/skills/`、扁平的 `.grok/commands/trellis-*.md` 以及 `.grok/agents/`。不启用 hook 上下文注入 —— Grok 不消费 hook stdout。
+
+### Kimi Code 平台
+
+`trellis init --kimi` 将 Kimi Code 配置为 class-2 拉取式平台:`.kimi-code/skills/`、共享的 `.agents/skills/`、`.kimi-code/prompts/` 下的 prompts,并通过内置的 `coder` / `explore` 子代理分发。
+
+### Codex 原生子代理分发
+
+Codex 现在以原生子代理方式分发 `trellis-implement` / `trellis-check` / `trellis-research`,带 `SubagentStart` 上下文注入和子侧拉取兜底。项目 `config.toml` 固定 `agents.max_depth=1` 防止递归。
+
+### ZCode hooks 与 mem 会话
+
+ZCode 获得确定性 hook 上下文注入和 `trellis mem` 会话发现(#411)。
+
+### 机器可读状态
+
+- `trellis platforms --json` 列出已配置平台的 `id`、`displayName`、`configDir`(#396)。
+- `task.py list --json` / `task.py current --json` 输出结构化任务状态(#395)。
+
+### Channel 与任务选项
+
+- `trellis channel spawn --sandbox <read-only|workspace-write|danger-full-access>` 覆盖 Codex worker 的沙箱模式(#413)。
+- `task.py create` 从仓库默认分支写入 `base_branch`,并支持 `--base-branch`(#399)。
+
+## Bug Fixes
+
+### Pi 共享 skills 根目录
+
+Pi 现在把 skills 写入共享的 `.agents/skills/` 根目录,不再保留私有的 `.pi/skills/` 副本,修复了与 Codex/Gemini 并存时的重复 skill 安装(#447)。0.6.8 迁移会移动已有的 `.pi/skills/` 内容;`trellis update` 的 rename-dir 合并不再用过期源字节覆盖规范目标。
+
+### Update 与模板修复
+
+- 更新时保留被重新引入的模板(#425)。
+- registry 模板下载去掉 `preferOffline`,避免命中过期缓存(#383)。
+- YAML frontmatter 描述加引号,以兼容内嵌冒号(#437)。
+
+### Hook 与工作流修复
+
+- Oh My Pi 将会话上下文桥接进 bash 环境(#424)。
+- SessionStart 确认语言随会话自适应(#439)。
+- Brainstorm 在创建任务前要求显式的规划批准(#416)。
+- 0.6.7 fleet review 批次:任务边界、原子写入、激活诊断、OpenCode `start.md`(#438)。
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update            # 大多数项目
+trellis update --migrate  # Pi 项目:迁移 .pi/skills/ → .agents/skills/
+```

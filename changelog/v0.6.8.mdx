@@ -1,0 +1,61 @@
+---
+title: 'v0.6.8'
+description: '2026-07-22'
+---
+
+Patch release adding two platforms (Grok Build, Kimi Code), Codex native subagent dispatch, machine-readable platform/task state, and the Pi shared-skills migration. Pi users should run `trellis update --migrate`; everyone else `trellis update`.
+
+## Enhancements
+
+### Grok Build platform
+
+`trellis init --grok` configures Grok Build (xAI CLI) as a class-2 pull-based platform: `.grok/skills/`, flat `.grok/commands/trellis-*.md`, and `.grok/agents/`. Hook context injection is not enabled — Grok does not consume hook stdout.
+
+### Kimi Code platform
+
+`trellis init --kimi` configures Kimi Code as a class-2 pull-based platform: `.kimi-code/skills/`, shared `.agents/skills/`, prompts under `.kimi-code/prompts/`, and dispatch via the built-in `coder` / `explore` sub-agents.
+
+### Codex native subagent dispatch
+
+Codex now dispatches `trellis-implement` / `trellis-check` / `trellis-research` as native subagents with `SubagentStart` context injection and child-side pull fallback. `agents.max_depth=1` is pinned in the project `config.toml` to prevent recursion.
+
+### ZCode hooks and mem sessions
+
+ZCode gains deterministic hook context injection and `trellis mem` session discovery (#411).
+
+### Machine-readable state
+
+- `trellis platforms --json` lists configured platforms with `id`, `displayName`, `configDir` (#396).
+- `task.py list --json` / `task.py current --json` emit structured task state (#395).
+
+### Channel and task options
+
+- `trellis channel spawn --sandbox <read-only|workspace-write|danger-full-access>` overrides the Codex worker sandbox mode (#413).
+- `task.py create` stamps `base_branch` from the repo default and accepts `--base-branch` (#399).
+
+## Bug Fixes
+
+### Pi shared skills root
+
+Pi now writes skills to the shared `.agents/skills/` root instead of a private `.pi/skills/` copy, fixing duplicate skill installs alongside Codex/Gemini (#447). The 0.6.8 migration moves existing `.pi/skills/` content; `trellis update` rename-dir merges no longer clobber the canonical target with stale source bytes.
+
+### Update and template fixes
+
+- Reintroduced templates are preserved on update (#425).
+- Registry template downloads drop `preferOffline`, avoiding stale cache hits (#383).
+- YAML frontmatter descriptions are quoted to survive embedded colons (#437).
+
+### Hook and workflow fixes
+
+- Oh My Pi bridges session context into the bash env (#424).
+- SessionStart acknowledgment language adapts to the session (#439).
+- Brainstorm requires explicit planning approval before task creation (#416).
+- 0.6.7 fleet review batch: task boundary, atomic write, activation diagnostics, OpenCode `start.md` (#438).
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update            # most projects
+trellis update --migrate  # Pi projects: moves .pi/skills/ → .agents/skills/
+```
