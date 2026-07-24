@@ -1,0 +1,53 @@
+---
+title: 'v0.6.9'
+description: '2026-07-24'
+---
+
+Patch release adding the Snow CLI platform, sub-agent context injection caps across all three loaders, a per-turn injection skip keyword, durable Codex sub-agent model config, channel trusted context dirs for symlinked workspaces, and journal merge conflict relief.
+
+## Enhancements
+
+### Snow CLI platform
+
+`trellis init --snow` configures Snow CLI as a class-1 platform: auto context inject via `.snow/hooks/`, project agent discovery under `.snow/agents/`, `beforeSubAgentStart` prompt enrichment, and multi-session isolation via Snow session identity env (#443).
+
+### Sub-agent context injection caps
+
+Sub-agent context injection now caps per-file (32 KiB), per-artifact (64 KiB), and total (128 KiB) payload size across the shared Python hook, the Pi extension, and the OpenCode plugin. Oversized files truncate with a notice; once the total cap is reached, remaining files degrade to index lines instead of being inlined. Configurable via `context_injection` in `.trellis/config.yaml` (`0` disables a limit). Binary referenced files (detected via NUL bytes and strict UTF-8 validation) are never inlined — they emit a reference-only notice regardless of the configured limits (#441, #456, #471).
+
+### `no-trellis` skip keyword
+
+A prompt containing the configurable skip keyword (default `no-trellis`, word-boundary match) mutes the per-turn workflow-state injection for that turn. Configurable via `prompt_injection.skip_keyword` in `.trellis/config.yaml`; empty string disables the escape hatch (#427).
+
+### Durable Codex sub-agent model config
+
+User-set `model` / `model_reasoning_effort` in `.codex/agents/trellis-*.toml` now survive `trellis update` regeneration instead of being overwritten. Templates ship commented hints (`gpt-5.6-terra` / `high`) so the knob is discoverable. `dispatch_mode` stays `auto` by default — sub-agents inherit the main session's model unless pinned in the agent toml (#459).
+
+### Channel trusted context dirs
+
+`channel.trusted_context_dirs` in `.trellis/config.yaml` allowlists external directories for context loading, plus narrow auto-trust when `.trellis/tasks` or `.trellis/workspace` themselves are symlinks — for projects that persist Trellis data outside a periodically-replaced project directory (#414).
+
+### Script and task quality-of-life
+
+- `add_session.py` gains repeatable `--change` / `--test` / `--next-step` flags; sections with no content are omitted instead of rendering placeholder text (#394).
+- `task.py list` renders a task with a dangling parent reference flat instead of hiding it (#402).
+- `task.py create --meta key=value` (repeatable) and a new `task.py set-meta` subcommand expose the `task.json` `meta` field.
+
+## Bug Fixes
+
+### Kimi research persistence
+
+`trellis-research` on Kimi Code now dispatches through the writable built-in `coder` sub-agent, so research findings persist under the task's `research/` directory instead of being lost (#457).
+
+### Journal merge conflicts
+
+`.gitattributes` ships `journal-*.md merge=union`, so parallel-worktree or concurrent `trellis archive` runs no longer conflict on append-only journal content. `index.md` conflicts are expected when parallel sessions ran — picking either side is safe since task state lives in `task.json`, not `index.md`. `add_session.py` warns once when run inside a linked worktree with `session_auto_commit` enabled (#415).
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+No `--migrate` required.

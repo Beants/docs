@@ -1,0 +1,53 @@
+---
+title: 'v0.6.9'
+description: '2026-07-24'
+---
+
+补丁版本:新增 Snow CLI 平台、三处子代理上下文注入加限、每轮注入静音关键词、可持久化的 Codex 子代理模型配置、软链接工作区的 channel 信任目录,以及 journal 合并冲突缓解。
+
+## Enhancements
+
+### Snow CLI 平台
+
+`trellis init --snow` 将 Snow CLI 配置为 class-1 平台:通过 `.snow/hooks/` 自动注入上下文、`.snow/agents/` 下的项目 agent 发现、`beforeSubAgentStart` prompt 增强,以及基于 Snow 会话身份环境变量的多会话隔离(#443)。
+
+### 子代理上下文注入加限
+
+子代理上下文注入现在对单文件(32 KiB)、单工件(64 KiB)和总量(128 KiB)都设了上限,覆盖共享 Python hook、Pi extension 和 OpenCode 插件三处。超限文件截断并附带通知;总量预算用尽后,剩余文件降级为索引行而不是内联。可通过 `.trellis/config.yaml` 的 `context_injection` 配置(`0` 表示不限)。二进制引用文件(通过 NUL 字节和严格 UTF-8 校验检测)永远不会被内联——无论限额如何配置都只发出引用型通知(#441、#456、#471)。
+
+### `no-trellis` 静音关键词
+
+提示词中包含可配置的静音关键词(默认 `no-trellis`,整词匹配)会使当轮的 workflow-state 每轮注入静默。可通过 `.trellis/config.yaml` 的 `prompt_injection.skip_keyword` 配置;空字符串禁用该逃生口(#427)。
+
+### 可持久化的 Codex 子代理模型配置
+
+用户在 `.codex/agents/trellis-*.toml` 中设置的 `model` / `model_reasoning_effort` 现在会在 `trellis update` 重新生成时保留,不再被覆盖。模板自带注释提示(`gpt-5.6-terra` / `high`)方便发现这个开关。`dispatch_mode` 默认仍是 `auto`——子代理默认继承主会话模型,除非在 agent toml 里固定(#459)。
+
+### Channel 信任目录
+
+`.trellis/config.yaml` 中的 `channel.trusted_context_dirs` 为上下文加载提供外部目录白名单,并对 `.trellis/tasks` 或 `.trellis/workspace` 自身是软链接的情况提供窄范围自动信任——适用于把 Trellis 数据持久化在会被定期替换的项目目录之外的项目(#414)。
+
+### 脚本与任务体验改进
+
+- `add_session.py` 新增可重复的 `--change` / `--test` / `--next-step` 参数;没有内容的栏目直接省略,不再渲染占位文本(#394)。
+- `task.py list` 对带悬空父引用的任务改为平铺显示,而不是隐藏(#402)。
+- `task.py create --meta key=value`(可重复)以及新增的 `task.py set-meta` 子命令,暴露了 `task.json` 的 `meta` 字段。
+
+## Bug Fixes
+
+### Kimi research 持久化
+
+Kimi Code 上的 `trellis-research` 现在通过可写的内置 `coder` 子代理派发,研究成果会持久化到任务的 `research/` 目录下,而不再丢失(#457)。
+
+### Journal 合并冲突
+
+`.gitattributes` 中加入 `journal-*.md merge=union`,使并行 worktree 或并发的 `trellis archive` 运行不再在追加型的 journal 内容上产生冲突。`index.md` 在并行会话场景下出现冲突是预期行为——任选一边解决即可,因为任务状态存在 `task.json` 里,不在 `index.md`。在开启 `session_auto_commit` 的 linked worktree 中运行 `add_session.py` 时会打印一次性警告(#415)。
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+不需要 `--migrate`。
