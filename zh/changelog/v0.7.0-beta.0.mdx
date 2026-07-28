@@ -27,8 +27,9 @@ Spec 可以在 YAML frontmatter 中声明相对于仓库根目录的 `paths` glo
 Workflow 变体现在可以共存在 `.trellis/workflows/`，无需替换全局
 `.trellis/workflow.md`。
 
-- `trellis workflow --save <id>` 把变体保存到项目 workflow 库。
-- `task.py create --workflow <id>` 和 `task.py workflow <id>` 为单个任务指定
+- `trellis workflow --save <workflow-id>` 把变体保存到项目 workflow 库。
+- `task.py create --workflow <workflow-id>` 和
+  `task.py workflow <workflow-id>` 为单个任务指定
   变体。
 - 运行时优先级是：任务 pin → 个人 `.trellis/.developer` 覆盖 → 团队
   `default_workflow` → 全局 workflow。
