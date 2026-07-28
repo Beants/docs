@@ -31,8 +31,9 @@ See [Dynamic Spec Loading](/beta/advanced/dynamic-spec-loading).
 Workflow variants now coexist under `.trellis/workflows/` and can be selected
 without replacing the global `.trellis/workflow.md`.
 
-- `trellis workflow --save <id>` populates the project workflow library.
-- `task.py create --workflow <id>` and `task.py workflow <id>` pin a variant to
+- `trellis workflow --save <workflow-id>` populates the project workflow library.
+- `task.py create --workflow <workflow-id>` and
+  `task.py workflow <workflow-id>` pin a variant to
   one task.
 - Runtime precedence is task pin → personal `.trellis/.developer` override →
   team `default_workflow` → global workflow.

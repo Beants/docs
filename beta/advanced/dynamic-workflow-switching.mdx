@@ -9,7 +9,7 @@ fallback.
 
 ## Global switching and task selection are different
 
-`trellis workflow --template <id>` replaces the global
+`trellis workflow --template <workflow-id>` replaces the global
 `.trellis/workflow.md`. Use it when the project as a whole should move to a
 different workflow.
 
@@ -49,7 +49,7 @@ The result is a user-managed file:
 ```
 
 `trellis update` does not overwrite files in this library. Re-run
-`trellis workflow --save <id> --force` when you intentionally want to refresh
+`trellis workflow --save <workflow-id> --force` when you intentionally want to refresh
 a saved template.
 
 ## Pin a workflow to a task
@@ -89,12 +89,12 @@ invalid variant prints a warning and falls through to the next default.
 
 Runtime resolution uses one precedence chain:
 
-| Priority | Source                                    | Scope                          | Committed |
-| -------: | ----------------------------------------- | ------------------------------ | :-------: |
-|        1 | `task.json` `workflow`                    | Current task                   |    Yes    |
-|        2 | `.trellis/.developer` `workflow=<id>`     | Current developer and checkout |    No     |
-|        3 | `.trellis/config.yaml` `default_workflow` | Team                           |    Yes    |
-|        4 | `.trellis/workflow.md`                    | Project fallback               |    Yes    |
+| Priority | Source                                         | Scope                          | Committed |
+| -------: | ---------------------------------------------- | ------------------------------ | :-------: |
+|        1 | `task.json` `workflow`                         | Current task                   |    Yes    |
+|        2 | `.trellis/.developer` `workflow=<workflow-id>` | Current developer and checkout |    No     |
+|        3 | `.trellis/config.yaml` `default_workflow`      | Team                           |    Yes    |
+|        4 | `.trellis/workflow.md`                         | Project fallback               |    Yes    |
 
 Set a team default:
 
