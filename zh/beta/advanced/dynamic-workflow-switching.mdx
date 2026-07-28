@@ -170,6 +170,7 @@ Workflow id 必须匹配 `[A-Za-z0-9_-]+`，确保所有 id 都只能落在
   task、personal 和 team 选择目前还不适用于这两个 extension。
 - OpenCode 的每轮 breadcrumb 支持动态选择，但 SessionStart 摘要仍读取全局
   workflow。
+- Snow 的 SessionStart 和每轮消息上下文仍读取全局 workflow。
 - 保存的 marketplace workflow 是本地副本，不会自动更新；需要时用
   `--force` 再保存一次。
 
