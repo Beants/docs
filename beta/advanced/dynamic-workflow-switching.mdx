@@ -16,6 +16,28 @@ different workflow.
 Dynamic selection keeps variants under `.trellis/workflows/` and resolves one
 at runtime for the active task. It does not overwrite the global workflow.
 
+## Create a local workflow
+
+Create a complete, editable workflow from the bundled native workflow:
+
+```bash
+trellis workflow create review-first
+```
+
+Trellis writes `.trellis/workflows/review-first.md`, then asks two questions
+in order:
+
+1. Set `default_workflow: review-first` in `.trellis/config.yaml`?
+2. Set `workflow=review-first` in `.trellis/.developer`?
+
+Both default to no. The workflow file is created regardless of the answers.
+Use `--skip-defaults` to create the file without prompts. Non-interactive
+execution also skips the prompts.
+
+The command copies the full native workflow so the new file already contains
+the required phase headings, workflow-state blocks, and platform markers. It
+never changes or removes the global `.trellis/workflow.md`.
+
 ## Save workflow variants to the project library
 
 List bundled, marketplace, and already-saved workflows:
@@ -153,6 +175,8 @@ Workflow ids must match `[A-Za-z0-9_-]+`. This keeps every id inside
 - Pi Agent and Oh My Pi extensions still read the global
   `.trellis/workflow.md`; task, personal, and team selection does not apply to
   those two extensions yet.
+- OpenCode per-turn breadcrumbs honor dynamic selection, but its SessionStart
+  summary still reads the global workflow.
 - A saved marketplace workflow is a local copy. It does not update until you
   save it again with `--force`.
 
