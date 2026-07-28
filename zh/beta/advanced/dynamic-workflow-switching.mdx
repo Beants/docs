@@ -14,6 +14,27 @@ Trellis 0.7 把全局 workflow 和 workflow 变体库分开。不同任务可以
 动态选择把变体保存在 `.trellis/workflows/`，运行时为当前 active task 解析
 一个变体，不会覆盖全局 workflow。
 
+## 创建本地 workflow
+
+从内置 native workflow 创建一份完整、可编辑的 workflow：
+
+```bash
+trellis workflow create review-first
+```
+
+Trellis 会写入 `.trellis/workflows/review-first.md`，然后依次询问：
+
+1. 是否在 `.trellis/config.yaml` 中设置 `default_workflow: review-first`？
+2. 是否在 `.trellis/.developer` 中设置 `workflow=review-first`？
+
+两个问题默认都选否。无论怎样回答，workflow 文件都会创建。使用
+`--skip-defaults` 可以只创建文件、不显示默认值设置交互；非交互环境也会跳过
+这两个问题。
+
+命令复制完整的 native workflow，因此新文件一开始就包含必需的 phase 标题、
+workflow-state block 和平台 marker。它不会修改或删除全局
+`.trellis/workflow.md`。
+
 ## 把 workflow 变体保存到项目库
 
 列出内置、marketplace 和已保存的 workflow：
@@ -147,6 +168,8 @@ Workflow id 必须匹配 `[A-Za-z0-9_-]+`，确保所有 id 都只能落在
 - 选择是显式的，Trellis 暂时不会根据任务类型自动推断 workflow。
 - Pi Agent 和 Oh My Pi extension 仍然读取全局 `.trellis/workflow.md`；
   task、personal 和 team 选择目前还不适用于这两个 extension。
+- OpenCode 的每轮 breadcrumb 支持动态选择，但 SessionStart 摘要仍读取全局
+  workflow。
 - 保存的 marketplace workflow 是本地副本，不会自动更新；需要时用
   `--force` 再保存一次。
 
