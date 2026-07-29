@@ -41,7 +41,7 @@ After that, on platforms with a SessionStart hook or extension, opening a new se
 | ------------------------------ | :---------: | :----: | :------: | :---: | :--: | :----: | :---: | :-------: | :-----: | :---: | :------: | :------: |
 | SessionStart / startup context |     ✅      |   ✅   |    ✅    |  ⚡   |  ⚡  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
 | Sub-agent context injection    |     ✅      |   ✅   |    ✅    |  ❌   |  ❌  |   ❌   |  ❌   |    ✅     |   ❌    |  ✅   |    ✅    |    ✅    |
-| Dynamic spec loading           |     ✅      |  pull  |    ✅    |  ✅   | pull |  pull  | pull  |   pull    |  pull   | pull  |   pull   |   pull   |
+| Dynamic spec loading           |     ✅      |  pull  |    ✅    |  ✅   | pull |  pull  | pull  |   pull    |  pull   | pull  |    ✅    |   pull   |
 | Sub-agents (`trellis-*`)       |     ✅      |   ✅   |    ✅    |  ✅   |  ✅  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
 | Auto-trigger skills            |     ✅      |   ✅   |    ✅    |  ✅   |  ✅  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
 | Explicit `/trellis:*` commands |     ✅      |   ✅   |    ✅    |   —   |  —   |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
@@ -56,8 +56,8 @@ continue are delivered as skills instead. Qoder uses `/trellis-{name}` (hyphen,
 not colon) via its native Custom Commands for `finish-work` / `continue`; `start`
 is covered by its SessionStart hook. Pi Agent uses an extension rather than
 Python hook files, but the behavior is the same: session context, Bash
-environment propagation, and sub-agent context injection are handled before the
-agent acts. `pull` means the platform can resolve governing spec paths through
+environment propagation, sub-agent context injection, and dynamic spec loading
+are handled by the extension. `pull` means the platform can resolve governing spec paths through
 `get_context.py --mode spec`, but Trellis does not push those specs into tool
 execution automatically.
 

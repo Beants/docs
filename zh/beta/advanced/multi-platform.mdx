@@ -40,7 +40,7 @@ Trellis 支持 17 个平台（Claude Code、Cursor、OpenCode、Codex、Kiro、K
 | ------------------------------ | :---------: | :----: | :------: | :---: | :--: | :----: | :---: | :-------: | :-----: | :---: | :------: | :------: |
 | SessionStart / startup context |     ✅      |   ✅   |    ✅    |  ⚡   |  ⚡  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
 | Sub-agent 上下文注入           |     ✅      |   ✅   |    ✅    |  ❌   |  ❌  |   ❌   |  ❌   |    ✅     |   ❌    |  ✅   |    ✅    |    ✅    |
-| 动态 Spec 加载                 |     ✅      |  pull  |    ✅    |  ✅   | pull |  pull  | pull  |   pull    |  pull   | pull  |   pull   |   pull   |
+| 动态 Spec 加载                 |     ✅      |  pull  |    ✅    |  ✅   | pull |  pull  | pull  |   pull    |  pull   | pull  |    ✅    |   pull   |
 | Sub-agent（`trellis-*`）       |     ✅      |   ✅   |    ✅    |  ✅   |  ✅  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
 | Auto-trigger skill             |     ✅      |   ✅   |    ✅    |  ✅   |  ✅  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
 | 显式 `/trellis:*` 命令         |     ✅      |   ✅   |    ✅    |   —   |  —   |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
@@ -51,7 +51,7 @@ Trellis 支持 17 个平台（Claude Code、Cursor、OpenCode、Codex、Kiro、K
 — 该平台没有命令原语，start / finish-work / continue 作为 skill 交付。Qoder 用的是
 `/trellis-{name}`（连字符，不是冒号），通过原生 Custom Commands 交付 `finish-work` /
 `continue`；`start` 由 SessionStart hook 自动注入。Pi Agent 走 extension，不走 Python hook 文件，
-但行为一致：会话上下文、Bash 环境变量传递、sub-agent context 注入都在 agent 动作前完成。
+但行为一致：会话上下文、Bash 环境变量传递、sub-agent context 注入和动态 Spec 加载都由 extension 完成。
 `pull` 表示平台可以通过 `get_context.py --mode spec` 查询约束当前路径的 spec，
 但 Trellis 不会在工具执行时自动推送正文。
 
