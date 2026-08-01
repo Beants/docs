@@ -1,0 +1,21 @@
+---
+title: 'v0.6.12'
+description: '2026-08-01'
+---
+
+Patch release isolating concurrent Pi sessions.
+
+## Bug Fixes
+
+### Pi session identity
+
+The `.pi/extensions/trellis/index.ts` extension now derives each main window's Trellis context from Pi's native session ID. `contextKey()` ignores ambient `TRELLIS_CONTEXT_ID`, and `getKey()` no longer adopts an unrelated singleton runtime pointer. Session IDs changed by normalization include a raw-ID hash so distinct IDs cannot collapse onto the same context key (#512, #513).
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+No `--migrate` required.

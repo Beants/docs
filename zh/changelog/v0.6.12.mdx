@@ -1,0 +1,21 @@
+---
+title: 'v0.6.12'
+description: '2026-08-01'
+---
+
+补丁版本：隔离并发运行的 Pi session。
+
+## Bug Fixes
+
+### Pi session 身份
+
+`.pi/extensions/trellis/index.ts` 扩展现在根据 Pi 原生 session ID 为每个主窗口生成 Trellis 上下文。`contextKey()` 会忽略环境中的 `TRELLIS_CONTEXT_ID`，`getKey()` 也不再采用无关的单一 runtime pointer。规范化会改变的 session ID 会附加原始 ID hash，避免不同 ID 折叠为同一个上下文 key（#512、#513）。
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+不需要 `--migrate`。
