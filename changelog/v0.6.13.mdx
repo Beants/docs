@@ -1,0 +1,52 @@
+---
+title: 'v0.6.13'
+description: '2026-08-06'
+---
+
+Patch release extending the shell-ticket session bridge to six platforms and deduplicating the `CLAUDE_ENV_FILE` append.
+
+## Bug Fixes
+
+### Shell-ticket session bridge on six platforms
+
+`inject-shell-session-context.py` now ships to Gemini CLI, Qoder, CodeBuddy, Droid, Trae and ZCode. On those platforms `task.py start` resolved no session identity and left `.trellis/.runtime/sessions/` unwritten.
+
+| Platform   | Hook event   | Registered in              |
+| ---------- | ------------ | -------------------------- |
+| Gemini CLI | `BeforeTool` | `.gemini/settings.json`    |
+| Qoder      | `PreToolUse` | `.qoder/settings.json`     |
+| CodeBuddy  | `PreToolUse` | `.codebuddy/settings.json` |
+| Droid      | `PreToolUse` | `.factory/settings.json`   |
+| Trae       | `PreToolUse` | `.trae/hooks.json`         |
+| ZCode      | `PreToolUse` | `.zcode/config.json`       |
+
+Tickets are written to `.trellis/.runtime/shell-tickets/`; the pre-0.6.13 `.trellis/.runtime/cursor-shell/` is still read, never written. Distribution is declared in `SHARED_HOOKS_BY_PLATFORM`. Kiro is not wired: neither of its hook surfaces publishes a pre-tool trigger.
+
+### CLAUDE_ENV_FILE append dedupe
+
+`_persist_context_key_for_bash` in `session-start.py` appends `export TRELLIS_CONTEXT_ID=<key>` to `$CLAUDE_ENV_FILE` only when the last existing export assigns a different value. It previously appended on every SessionStart, growing a user-owned file the shell sources for every command. Lines already accumulated are not removed — delete them by hand.
+
+### Update reminder in SessionStart
+
+SessionStart carries `Trellis update available: <current> -> <latest>, run trellis update` inside its `<first-reply-notice>` block, which the assistant relays in its first visible reply. `get_update_hint()` was reachable only through `get_context.py --mode text`, so hook-driven platforms never showed it. The once-per-session marker `.trellis/.runtime/update-check-<key>.marker` now keys on the context key resolved from hook stdin instead of falling back to `TERM_SESSION_ID`.
+
+### ZCode session identity
+
+`.trellis/scripts/common/active_task.py` resolves ZCode session identity from `CLAUDE_CODE_SESSION_ID`, then `CLAUDE_SESSION_ID`. The lookup is platform-scoped, so it fires only after the resolver detects `zcode`.
+
+### Windows Python command rendering
+
+`.snow/SNOW.md`, `.github/copilot-instructions.md` and `.reasonix/skills/<name>/SKILL.md` now go through the `python3` → resolved-Python-command rewrite (`python` on Windows). Every platform file is written through `writeTemplateMap`, which renders each entry with `replacePythonCommandLiterals`. The rewrite is a no-op when the resolved command is `python3`, so output on macOS and Linux is unchanged.
+
+### trellis-meta bundled-skills reference
+
+`trellis-meta`'s `references/local-architecture/bundled-skills.md` — shipped into every platform skill root, e.g. `.claude/skills/trellis-meta/` — documents the current path: one `collect<Platform>Templates()` per platform, written by `writeTemplateMap`. Its platform table lists all 21 skill roots (was 15) and no longer names `writeSkills()` or `configureCursor()`, neither of which exists.
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+No `--migrate` required.

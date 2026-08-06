@@ -1,0 +1,52 @@
+---
+title: 'v0.6.13'
+description: '2026-08-06'
+---
+
+补丁版本：将 shell-ticket session 桥接扩展到六个平台，并对 `CLAUDE_ENV_FILE` 的追加写入去重。
+
+## Bug Fixes
+
+### 六个平台的 shell-ticket session 桥接
+
+`inject-shell-session-context.py` 现在会分发给 Gemini CLI、Qoder、CodeBuddy、Droid、Trae 和 ZCode。在这些平台上，`task.py start` 解析不到 session 身份，`.trellis/.runtime/sessions/` 始终没有被写入。
+
+| 平台       | Hook 事件    | 注册位置                   |
+| ---------- | ------------ | -------------------------- |
+| Gemini CLI | `BeforeTool` | `.gemini/settings.json`    |
+| Qoder      | `PreToolUse` | `.qoder/settings.json`     |
+| CodeBuddy  | `PreToolUse` | `.codebuddy/settings.json` |
+| Droid      | `PreToolUse` | `.factory/settings.json`   |
+| Trae       | `PreToolUse` | `.trae/hooks.json`         |
+| ZCode      | `PreToolUse` | `.zcode/config.json`       |
+
+ticket 写入 `.trellis/.runtime/shell-tickets/`；0.6.13 之前的 `.trellis/.runtime/cursor-shell/` 仍会被读取，但不再写入。分发范围由 `SHARED_HOOKS_BY_PLATFORM` 声明。Kiro 未接入：它的两个 hook 接口都没有提供工具调用前的触发事件。
+
+### CLAUDE_ENV_FILE 追加去重
+
+`session-start.py` 中的 `_persist_context_key_for_bash` 现在只在最后一条已有 export 的值不同时，才向 `$CLAUDE_ENV_FILE` 追加 `export TRELLIS_CONTEXT_ID=<key>`。此前每次 SessionStart 都会追加一行，而这个文件由用户自己维护、shell 每条命令都会 source 它。已经累积的行不会被清理，需要手动删除。
+
+### SessionStart 中的更新提醒
+
+SessionStart 会把 `Trellis update available: <current> -> <latest>, run trellis update` 放进 `<first-reply-notice>` 块，由 AI 在本次会话第一条可见回复中转述。`get_update_hint()` 此前只能通过 `get_context.py --mode text` 到达，因此依赖 hook 的平台从未显示过该提醒。每 session 一次的标记文件 `.trellis/.runtime/update-check-<key>.marker` 现在以 hook stdin 解析出的 context key 为准，不再回退到 `TERM_SESSION_ID`。
+
+### ZCode session 身份
+
+`.trellis/scripts/common/active_task.py` 依次从 `CLAUDE_CODE_SESSION_ID`、`CLAUDE_SESSION_ID` 解析 ZCode 的 session 身份。该查找按平台限定，只有解析器识别出 `zcode` 后才会生效。
+
+### Windows Python 命令渲染
+
+`.snow/SNOW.md`、`.github/copilot-instructions.md` 和 `.reasonix/skills/<name>/SKILL.md` 现在同样会经过 `python3` → 解析出的 Python 命令的改写（Windows 上为 `python`）。所有平台文件都通过 `writeTemplateMap` 写入，它会对每个条目执行 `replacePythonCommandLiterals`。当解析结果就是 `python3` 时该改写为空操作，因此 macOS 和 Linux 上的产物不变。
+
+### trellis-meta bundled-skills 参考文档
+
+`trellis-meta` 的 `references/local-architecture/bundled-skills.md`（会分发到每个平台的 skill 根目录，例如 `.claude/skills/trellis-meta/`）现在描述当前路径：每个平台一个 `collect<Platform>Templates()`，由 `writeTemplateMap` 写入。其中的平台表列出全部 21 个 skill 根目录（此前为 15 个），也不再提及已不存在的 `writeSkills()` 和 `configureCursor()`。
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+不需要 `--migrate`。
