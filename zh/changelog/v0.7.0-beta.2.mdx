@@ -1,0 +1,31 @@
+---
+title: 'v0.7.0-beta.2'
+description: '2026-08-06'
+---
+
+同步版本。0.7 beta 线合入 v0.6.11 至 v0.6.13 的全部稳定版修复，beta 独有特性无改动。
+
+## Synced from main
+
+| 版本    | 修复                                                                                                                                                                                                                  |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| v0.6.11 | Pi 子 agent 模型继承与 max thinking；Codex channel 失败上报；已完成 turn 的 idle timeout；polyrepo Git 扫描上界；hook stdin 按 UTF-8 解码；平台探测改用 Trellis 自有文件                                              |
+| v0.6.12 | Pi 按原生 session ID 隔离上下文                                                                                                                                                                                       |
+| v0.6.13 | Gemini CLI、Qoder、CodeBuddy、Droid、Trae、ZCode 的 shell-ticket session 桥接；`CLAUDE_ENV_FILE` 追加去重；SessionStart 更新提醒；ZCode session 身份；Windows Python 命令渲染；`trellis-meta` bundled-skills 参考文档 |
+
+逐条细节见 [v0.6.11](/zh/changelog/v0.6.11)、[v0.6.12](/zh/changelog/v0.6.12)、
+[v0.6.13](/zh/changelog/v0.6.13) 的 changelog。
+
+beta 独有行为不变：workflow 脚手架、per-task workflow 选择、路径范围的 spec
+注入、OpenCode 动态 spec 加载全部原样保留。`SHARED_HOOKS_BY_PLATFORM` 现同时
+声明 `inject-spec-context.py`（beta）与 `inject-shell-session-context.py`（main）；
+shell hook 未接入 OpenCode——OpenCode 的 spec 注入是 JS 插件，不是 Python hook 配置。
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@beta
+trellis update
+```
+
+无需 `--migrate`。
