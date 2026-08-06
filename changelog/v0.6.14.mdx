@@ -1,0 +1,59 @@
+---
+title: 'v0.6.14'
+description: '2026-08-06'
+---
+
+Hooks now work on hosts that set `CLAUDE_PROJECT_DIR` alongside their own variable, and `trellis mem` returns conversations that compaction used to hide.
+
+## Bug Fixes
+
+### Platform detection on hosts with a Claude compatibility alias
+
+CodeBuddy, ZCode and Trae set `CLAUDE_PROJECT_DIR` beside their own `*_PROJECT_DIR`. `_detect_platform` in `shared-hooks/inject-workflow-state.py` and `session-start.py` checked that alias before the vendor keys, so all three resolved to `claude`. The context key became `claude_<host-session-id>`, which never matches the file `task.py start` writes under the host's real name.
+
+The symptom: `task.py start` succeeds, `.trellis/.runtime/sessions/<host>_<id>.json` exists, and every following turn still injects `Status: no_task`. On CodeBuddy the two keys were visible side by side as `codebuddy_ae54840e….json` and `update-check-claude_ae54840e….marker`.
+
+The alias is now checked last. A regression test pins the ordering.
+
+### Hook payload `cwd`
+
+`inject-shell-session-context.py`, `inject-workflow-state.py` and `inject-subagent-context.py` resolved the project root from the payload's `cwd` alone. CodeBuddy IDE 4.10.4 reports `"/"` on every hook event, so no `.trellis` was found above it and the hooks returned silently — invoked, doing nothing, indistinguishable from never firing. They now fall back to their own working directory.
+
+### Shell-ticket containment check
+
+The ticket recorded the payload's `cwd`, and `_ticket_cwd_matches_repo` rejects a ticket whose cwd is outside the repo. A ticket written correctly was discarded on arrival. The ticket now records the resolved project root; the host's value is kept as `host_cwd`.
+
+### PreToolUse matchers
+
+| Platform  | Matcher                                           |
+| --------- | ------------------------------------------------- |
+| CodeBuddy | `execute_command\|Bash\|PowerShell`, `task\|Task` |
+| Trae      | `RunCommand\|Bash`                                |
+| Qoder     | `Bash\|run_in_terminal`                           |
+
+IDE surfaces name their shell and subagent tools differently from the CLI, and only newer builds alias them.
+
+## Enhancements
+
+### Conversations hidden by compaction
+
+`trellis mem` returned the agent's last context window rather than the record: on a compacted session every adapter discarded turns still present in the file it had just read.
+
+Every dialogue turn now enters the pool, and compaction is marked instead of replacing what came before. `extract` on a twice-compacted Codex session returns 18 turns where it returned 2; a Claude session goes from 100 to 1536. Cleaning is unchanged — reasoning, tool calls and system injections are still stripped.
+
+Sessions whose content genuinely cannot be recovered say so. Codex stores inter-agent `NEW_TASK` and `MESSAGE` payloads as `encrypted_content`; Grok archives pre-compaction turns as rendered markdown under `<session>/compaction/`.
+
+Search scoring now dedupes explicitly. Sessions whose only occurrence of a query word lived inside a compaction summary no longer match; sessions whose real dialogue discusses the topic now do.
+
+### Grok sessions
+
+`trellis mem search|extract|context --platform grok` reads `~/.grok/sessions/<url-encoded-cwd>/<session-id>/chat_history.jsonl`. Project scoping works from the directory name. No database and no new dependency.
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+No `--migrate` required.

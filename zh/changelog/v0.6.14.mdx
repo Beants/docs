@@ -1,0 +1,59 @@
+---
+title: 'v0.6.14'
+description: '2026-08-06'
+---
+
+在同时设置 `CLAUDE_PROJECT_DIR` 的宿主上 hook 现在能正常工作；`trellis mem` 能取回被 compaction 挡住的对话。
+
+## Bug Fixes
+
+### 带 Claude 兼容别名的宿主的平台识别
+
+CodeBuddy、ZCode、Trae 都会在自己的 `*_PROJECT_DIR` 之外再设一个 `CLAUDE_PROJECT_DIR`。`shared-hooks/inject-workflow-state.py` 和 `session-start.py` 里的 `_detect_platform` 先查这个别名，于是三者全被识别为 `claude`，context key 变成 `claude_<宿主session-id>`，与 `task.py start` 用宿主真实名字写下的文件永远对不上。
+
+现象是：`task.py start` 成功、`.trellis/.runtime/sessions/<host>_<id>.json` 存在，而之后每一轮注入的仍是 `Status: no_task`。在 CodeBuddy 上两个 key 并排可见：`codebuddy_ae54840e….json` 与 `update-check-claude_ae54840e….marker`。
+
+现在该别名最后才查，并有回归测试锁定顺序。
+
+### hook payload 的 `cwd`
+
+`inject-shell-session-context.py`、`inject-workflow-state.py`、`inject-subagent-context.py` 仅凭 payload 的 `cwd` 定位项目根。CodeBuddy IDE 4.10.4 在每个 hook 事件都上报 `"/"`，向上找不到 `.trellis`，于是静默返回——被调用了、什么也没做，表现与从未触发完全相同。现在会回退到进程自身的工作目录。
+
+### shell-ticket 的归属校验
+
+ticket 记录的是 payload 的 `cwd`，而 `_ticket_cwd_matches_repo` 会拒绝 cwd 在仓库之外的 ticket——正确写出的 ticket 在消费时被丢弃。现在 ticket 记录解析出的项目根，宿主上报的值保留在 `host_cwd`。
+
+### PreToolUse matcher
+
+| 平台      | matcher                                           |
+| --------- | ------------------------------------------------- |
+| CodeBuddy | `execute_command\|Bash\|PowerShell`、`task\|Task` |
+| Trae      | `RunCommand\|Bash`                                |
+| Qoder     | `Bash\|run_in_terminal`                           |
+
+IDE 侧的 shell 与子 agent 工具命名和 CLI 不同，且只有较新版本才做别名映射。
+
+## Enhancements
+
+### 被 compaction 挡住的对话
+
+`trellis mem` 此前返回的是 agent 最后一个上下文窗口而非完整记录：session 一旦 compact，各适配器就丢弃那些仍在文件里的对话轮。
+
+现在文件里的每一轮对话都进入池子，compaction 变成标记而不是替换。经历两次 compact 的 Codex session，`extract` 从 2 轮变为 18 轮；一个 Claude session 从 100 变为 1536。清洗规则不变——reasoning、工具调用、系统注入照常剥离。
+
+确实无法恢复的会明说：Codex 把 inter-agent 的 `NEW_TASK` / `MESSAGE` 存为 `encrypted_content`；Grok 把 compact 前的对话归档为 `<session>/compaction/` 下的 markdown。
+
+搜索计分改为显式去重。仅在 compaction 摘要里出现过查询词的 session 不再命中，而真实对话讨论过该话题的 session 开始命中。
+
+### Grok session
+
+`trellis mem search|extract|context --platform grok` 读取 `~/.grok/sessions/<url编码的cwd>/<session-id>/chat_history.jsonl`，项目范围从目录名解析。不依赖数据库，未新增任何依赖。
+
+## Upgrade
+
+```bash
+npm install -g @mindfoldhq/trellis@latest
+trellis update
+```
+
+无需 `--migrate`。
