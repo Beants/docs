@@ -3,7 +3,7 @@ title: 'mem-recall'
 description: 'Cross-platform AI conversation recall via trellis mem'
 ---
 
-mem-recall makes the AI invoke `trellis mem` whenever the user references past conversations, retrieve content from local Claude Code, Codex, OpenCode, and Pi session stores, and answer with session-id + verbatim quotation.
+mem-recall makes the AI invoke `trellis mem` whenever the user references past conversations, retrieve content from local Claude Code, Codex, Grok, OpenCode, Pi and ZCode session stores, and answer with session-id + verbatim quotation.
 
 Trigger phrases include `last time`, `we discussed`, `what did I tell <Claude/Codex>`, `find ... last week`, `上次`, `之前`, and other references to prior dialogue.
 
@@ -14,7 +14,7 @@ Without the skill, the AI defaults to "I don't have that context" or speculative
 | Tool                                                                    | Purpose                 | Required     |
 | ----------------------------------------------------------------------- | ----------------------- | ------------ |
 | [Trellis CLI](https://github.com/mindfold-ai/Trellis) **0.6.0-beta.0+** | Provides `trellis mem`  | Required     |
-| Claude Code, Codex CLI, OpenCode, Pi                                    | Source of past sessions | At least one |
+| Claude Code, Codex CLI, Grok, OpenCode, Pi, ZCode                       | Source of past sessions | At least one |
 
 ```bash
 npm install -g @mindfoldhq/trellis@beta
@@ -77,18 +77,19 @@ Returns the top-N hit turns plus surrounding context. Default character budget �
 - prompt injections: `<system-reminder>`, `<workflow-state>`, `<INSTRUCTIONS>`, `<environment_context>`, etc.
 - Codex AGENTS.md preamble (first user message is dropped entirely)
 - tool calls and tool results (only `text` blocks retained)
-- pre-compaction history (Claude `isCompactSummary` / Codex `compacted` events replace older turns with a summary)
+  Turns from before a compaction are kept, with a marker showing where the compaction happened. Content the platform does not store in readable form is reported instead of silently dropped: Codex encrypts messages between agents, and Grok keeps pre-compaction turns as rendered markdown.
 
 ## Data sources
 
 Reads local files directly. No daemon, no index, no upload.
 
-| Platform    | Storage                                                      |
-| ----------- | ------------------------------------------------------------ |
-| Claude Code | `~/.claude/projects/<sanitized-cwd>/*.jsonl`                 |
-| Codex       | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`               |
-| OpenCode    | `~/.local/share/opencode/storage/{session,message,part}/...` |
-| Pi          | `~/.pi/agent/sessions/<encoded-cwd>/<timestamp>_<id>.jsonl`  |
+| Platform    | Storage                                                              |
+| ----------- | -------------------------------------------------------------------- |
+| Claude Code | `~/.claude/projects/<sanitized-cwd>/*.jsonl`                         |
+| Codex       | `~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`                       |
+| OpenCode    | `~/.local/share/opencode/storage/{session,message,part}/...`         |
+| Pi          | `~/.pi/agent/sessions/<encoded-cwd>/<timestamp>_<id>.jsonl`          |
+| Grok        | `~/.grok/sessions/<url-encoded-cwd>/<session-id>/chat_history.jsonl` |
 
 ## Out-of-scope use cases
 
