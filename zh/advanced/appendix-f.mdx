@@ -146,7 +146,7 @@ Devin）开新会话时，手动加载 Trellis orientation。有启动 hook、ex
 - **`workflow.md` 写清楚流程规则**：Phase 定义、skill 路由、每轮 workflow-state 提醒都在 `.trellis/workflow.md` 里。Fork 工作流 = 改一个 markdown 文件，不用动 Python、不用改 hook（见[自定义工作流](./custom-workflow)）。
 - **每轮 workflow-state 面包屑**：新增 `inject-workflow-state.py` hook，每条用户消息触发一次，按当前任务 status 注入 `<workflow-state>` 块，帮 AI 稳定走完 Plan → Execute → Finish 三阶段。
 - **3 个 sub-agent 取代 6 个**：`trellis-research` / `trellis-implement` / `trellis-check`；`dispatch` / `plan` / `debug` 移除；Ralph Loop 和它的 SubagentStop hook 也移除（check sub-agent 自带重试循环）。
-- **8 个平台升级为 agent-capable**：Cursor / OpenCode / Gemini CLI / Qoder / CodeBuddy / Copilot / Droid / Pi Agent 都拿到了 sub-agent + hook 或 extension 等价机制；`.trellis/` 核心跨 14 个平台保持一致。
+- **8 个平台升级为 agent-capable**：Cursor / OpenCode / Gemini CLI / Qoder / CodeBuddy / Copilot / Droid / Pi Agent 都拿到了 sub-agent + hook 或 extension 等价机制；`.trellis/` 核心跨所有平台保持一致。
 - **Multi-Agent Pipeline、`/parallel`、`worktree.yaml` 移除**：现代 agent CLI 的原生 worktree 支持已经替代它。
 - **强制迁移 gate**：破坏性版本必须加 `--migrate`，没加会 exit 并打印说明，不再静默留下半迁移状态。
 

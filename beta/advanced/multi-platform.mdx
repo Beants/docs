@@ -4,7 +4,7 @@ title: 'Multi-Platform and Team Configuration'
 
 ## Multi-Platform and Team Configuration
 
-Trellis ships on 17 platforms (Claude Code, Cursor, OpenCode, Codex, Kiro, Kilo, Gemini CLI, Antigravity, Devin (formerly Windsurf), Qoder, CodeBuddy, GitHub Copilot, Droid, Pi Agent, Oh My Pi, Reasonix, ZCode) and additionally supports any AI coding agent that reads the `.agents/skills/` standard (Amp, Cline, Deep Agents, Firebender, Kimi Code CLI, Warp, and more). The `.trellis/` core is identical everywhere; what differs is **how hooks, extensions, skills, sub-agents, and commands are delivered** on each platform.
+Trellis ships on 21 platforms (Claude Code, Cursor, OpenCode, Codex, Kiro, Kilo, Gemini CLI, Antigravity, Devin (formerly Windsurf), Qoder, CodeBuddy, GitHub Copilot, Droid, Pi Agent, Oh My Pi, Reasonix, ZCode, Trae, Grok Build, Kimi Code, Snow CLI) and additionally supports any AI coding agent that reads the `.agents/skills/` standard (Amp, Cline, Deep Agents, Firebender, Warp, and more). The `.trellis/` core is identical everywhere; what differs is **how hooks, extensions, skills, sub-agents, and commands are delivered** on each platform.
 
 ### Joining an Already-Initialized Trellis Project
 
@@ -88,7 +88,7 @@ Cursor is a full class-1 platform: real hooks, real sub-agents, real skills.
 Layout:
 
 - `.cursor/commands/trellis-{name}.md`: `start`, `finish-work`, `continue` (flat file naming with `trellis-` prefix, invoked as `/trellis-start` etc.)
-- `.cursor/skills/trellis-{name}/SKILL.md`: the 5 trellis skills
+- `.cursor/skills/trellis-{name}/SKILL.md`: the trellis skills
 - `.cursor/agents/`: `trellis-implement.md`, `trellis-check.md`, `trellis-research.md`
 - `.cursor/hooks/`: shared Python hook scripts (Claude-Code-compatible)
 - `.cursor/hooks.json`: hook configuration (Cursor uses a separate file, not `settings.json`)
@@ -103,7 +103,7 @@ OpenCode 1.2.x is a class-1 platform (real hooks + real sub-agents):
 
 - `.opencode/commands/trellis/`: start / finish-work / continue
 - `.opencode/agents/`: `trellis-implement.md`, `trellis-check.md`, `trellis-research.md`
-- `.opencode/skills/`: the 5 trellis skills
+- `.opencode/skills/`: the trellis skills
 - `.opencode/plugins/`: JS plugins: `session-start.js`, `inject-subagent-context.js`, `inject-workflow-state.js`, `inject-spec-context.js`
 - `.opencode/hooks/inject-spec-context.py`: shared path matching, budgets, and delivery state
 
@@ -120,8 +120,8 @@ trellis init -u your-name --codex
 Layout:
 
 - `AGENTS.md` (repo root): entry file; Codex auto-reads it every session (acts as the prelude)
-- `.codex/prompts/`: `trellis-start.md`, `trellis-finish-work.md`, `trellis-continue.md`
-- `.codex/skills/`: the 5 trellis skills
+- `.agents/skills/trellis-{name}/SKILL.md`: the trellis skills (shared layer; Codex reads it natively)
+- `.codex/skills/`: created empty, for skills you add yourself
 - `.codex/agents/`: TOML sub-agents: `trellis-implement.toml`, `trellis-check.toml`, `trellis-research.toml`
 - `.codex/hooks/inject-workflow-state.py` + `.codex/hooks.json`: `UserPromptSubmit` workflow-state hook
 - `.codex/hooks/session-start.py`: retained compact SessionStart compatibility script, not wired by default
@@ -172,7 +172,7 @@ trellis init -u your-name --gemini
 Layout:
 
 - `.gemini/commands/trellis/{name}.toml`: TOML command files — `start.toml`, `finish-work.toml`, `continue.toml`
-- `.gemini/skills/trellis-{name}/SKILL.md`: the 5 trellis skills
+- `.agents/skills/trellis-{name}/SKILL.md`: the trellis skills (shared layer; Gemini CLI 0.40+ reads it natively)
 - `.gemini/agents/{name}.md`: sub-agent definitions with pull-based prelude (sub-agents `Read` their own JSONL because Gemini has no sub-agent `PreToolUse` hook)
 - `.gemini/hooks/session-start.py`: SessionStart hook
 - `.gemini/settings.json`: hook configuration (SessionStart only)
@@ -204,7 +204,7 @@ CodeBuddy is a full class-1 platform (real hooks + real sub-agents).
 Layout:
 
 - `.codebuddy/commands/trellis/{name}.md`: `start`, `finish-work`, `continue`
-- `.codebuddy/skills/trellis-{name}/SKILL.md`: the 5 trellis skills
+- `.codebuddy/skills/trellis-{name}/SKILL.md`: the trellis skills
 - `.codebuddy/agents/{name}.md`: sub-agent definitions
 - `.codebuddy/hooks/*.py`: shared Python hook scripts
 - `.codebuddy/settings.json`: hook configuration (SessionStart + `PreToolUse` sub-agent injection)
@@ -219,7 +219,7 @@ Layout:
 
 - `.github/copilot-instructions.md`: the Trellis prelude, loaded automatically every session
 - `.github/prompts/trellis-{name}.prompt.md`: prompt files for `start` / `finish-work` / `continue`
-- `.github/skills/trellis-{name}/SKILL.md`: the 5 trellis skills
+- `.github/skills/trellis-{name}/SKILL.md`: the trellis skills
 - `.github/agents/{name}.agent.md`: sub-agent definitions with pull-based prelude (Copilot's sub-agent hook does not fire reliably, so sub-agents `Read` their own JSONL)
 - `.github/copilot/hooks/*.py`: Copilot-specific + shared Python hook scripts
 - `.github/copilot/hooks.json`: hook configuration (SessionStart only — sub-agent `PreToolUse` is absent)
@@ -233,8 +233,8 @@ trellis init -u your-name --droid
 Droid (factory.ai) is a class-1 platform with hooks + sub-agents:
 
 - `.factory/commands/trellis/`: start / finish-work / continue
-- `.factory/agents/`: the three `trellis-*` sub-agents
-- `.factory/skills/`: the five trellis skills
+- `.factory/droids/`: the three `trellis-*` sub-agents
+- `.factory/skills/`: the trellis skills
 - `.factory/hooks/`: SessionStart + sub-agent injection
 
 ### Pi Agent
@@ -248,7 +248,7 @@ Pi Agent is extension-backed rather than Python-hook-backed. Trellis writes the 
 Layout:
 
 - `.pi/prompts/trellis-{name}.md`: session-boundary prompts (`finish-work`, `continue`; `start` only where applicable)
-- `.pi/skills/trellis-{name}/SKILL.md`: the five Trellis workflow skills
+- `.agents/skills/trellis-{name}/SKILL.md`: the five Trellis workflow skills (shared layer; Pi reads it natively)
 - `.pi/agents/{name}.md`: `trellis-implement`, `trellis-check`, `trellis-research`
 - `.pi/extensions/trellis/index.ts`: session context, Bash `TRELLIS_CONTEXT_ID` propagation, and sub-agent JSONL injection
 - `.pi/settings.json`: extension registration
@@ -276,11 +276,17 @@ The extension stores active task state under `.trellis/.runtime/sessions/<sessio
 
 Trellis also ships configurators for platforms not covered by the capability matrix:
 
-- **Kilo** (`--kilo`): writes `.kilocode/workflows/` (commands: `start`, `finish-work`) and `.kilocode/skills/trellis-{name}/SKILL.md` (the 5 trellis skills). No hook integration.
+- **Kilo** (`--kilo`): writes `.kilocode/workflows/` (commands: `start`, `finish-work`) and `.kilocode/skills/trellis-{name}/SKILL.md` (the trellis skills). No hook integration.
 - **Antigravity** (`--antigravity`): writes Antigravity-native workflow files for the three commands.
 - **Devin** (`--devin`, formerly Windsurf): writes Devin-native workflow and skill files. The old `--windsurf` flag still works as a deprecated alias.
+- **Reasonix** (`--reasonix`): writes `.reasonix/` skills and sub-agents; commands are invoked as `/skill trellis-{name}`. No hook integration, so the sub-agent loads its own task context.
+- **ZCode** (`--zcode`): writes `.zcode/agents/`, `.zcode/commands/`, `.zcode/skills/`, and `.zcode/hooks/`. Commands use the `/trellis:` prefix.
+- **Trae** (`--trae`): writes `.trae/` agents, commands, skills, and Python hooks (SessionStart, workflow-state, sub-agent context injection).
+- **Grok Build** (`--grok`): writes `.grok/skills/`, `.grok/commands/`, `.grok/agents/`. Sub-agents are dispatched with `spawn_subagent`. No hook integration.
+- **Kimi Code** (`--kimi`): writes skills to `.kimi-code/skills/` plus the shared `.agents/skills/` layer; entry points are invoked as `/skill:trellis-{name}`. No project-level hooks (Kimi only supports a user-level `~/.kimi-code/config.toml`).
+- **Snow CLI** (`--snow`): writes `.snow/skills/`, `.snow/commands/`, `.snow/agents/`, and `.snow/hooks/` (Python hooks emit `additionalContext` JSON for session / user / sub-agent events).
 
-Beyond the 17 configured platforms, Trellis can be consumed by any AI coding agent that follows the `.agents/skills/` convention (the [agentskills.io](https://agentskills.io) standard). Codex writes its skills there, and the files are directly usable by other agents in that ecosystem (Amp, Cline, Deep Agents, Firebender, Kimi Code CLI, Warp, and more). On those platforms you manage Trellis through the `.trellis/` core plus whatever prelude file the agent reads.
+Beyond the 21 configured platforms, Trellis can be consumed by any AI coding agent that follows the `.agents/skills/` convention (the [agentskills.io](https://agentskills.io) standard). Codex writes its skills there, and the files are directly usable by other agents in that ecosystem (Amp, Cline, Deep Agents, Firebender, Warp, and more). On those platforms you manage Trellis through the `.trellis/` core plus whatever prelude file the agent reads.
 
 ### Operating Systems
 

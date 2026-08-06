@@ -8,7 +8,7 @@ Trellis 原生带的 slash 命令留得很少。Agent-capable 平台（Claude Co
 
 ### 命令文件格式和位置
 
-14 个平台按交付形态分三组：
+21 个平台按交付形态分三组：
 
 **显式 slash 命令**——用户输入 `/trellis:<name>`，平台把命令文件内容注入为 prompt。
 
@@ -17,7 +17,7 @@ Trellis 原生带的 slash 命令留得很少。Agent-capable 平台（Claude Co
 | Claude Code | `.claude/commands/trellis/{name}.md`                                              | `/trellis:{name}` |
 | Cursor      | `.cursor/commands/trellis-{name}.md`                                              | `/trellis-{name}` |
 | OpenCode    | `.opencode/commands/trellis/{name}.md`                                            | `/trellis:{name}` |
-| Codex       | `.codex/prompts/trellis-{name}.md`                                                | `/trellis-{name}` |
+| Codex       | `.agents/skills/trellis-{name}/SKILL.md`                                          | `/trellis-{name}` |
 | Gemini CLI  | `.gemini/commands/trellis/{name}.toml`                                            | `/trellis:{name}` |
 | Qoder       | `.qoder/commands/trellis-{name}.md`（YAML frontmatter 含 `name` + `description`） | `/trellis-{name}` |
 | CodeBuddy   | `.codebuddy/commands/trellis/{name}.md`                                           | `/trellis:{name}` |

@@ -4,7 +4,7 @@ title: '多平台与团队配置'
 
 ## 多平台与团队配置
 
-Trellis 支持 17 个平台（Claude Code、Cursor、OpenCode、Codex、Kiro、Kilo、Gemini CLI、Antigravity、Devin（原 Windsurf）、Qoder、CodeBuddy、GitHub Copilot、Droid、Pi Agent、Oh My Pi、Reasonix、ZCode），以及任何读取 `.agents/skills/` 规范的 AI 编码 agent（Amp、Cline、Deep Agents、Firebender、Kimi Code CLI、Warp 等）。`.trellis/` 核心跨平台一致；差异在于**各平台如何交付 hook、extension、skill、sub-agent、command**。
+Trellis 支持 21 个平台（Claude Code、Cursor、OpenCode、Codex、Kiro、Kilo、Gemini CLI、Antigravity、Devin（原 Windsurf）、Qoder、CodeBuddy、GitHub Copilot、Droid、Pi Agent、Oh My Pi、Reasonix、ZCode、Trae、Grok Build、Kimi Code、Snow CLI），以及任何读取 `.agents/skills/` 规范的 AI 编码 agent（Amp、Cline、Deep Agents、Firebender、Warp 等）。`.trellis/` 核心跨平台一致；差异在于**各平台如何交付 hook、extension、skill、sub-agent、command**。
 
 ### 加入已初始化的 Trellis 项目
 
@@ -82,7 +82,7 @@ Cursor 是完整 class-1 平台：真 hook、真 sub-agent、真 skill。
 布局：
 
 - `.cursor/commands/trellis-{name}.md`：`start`、`finish-work`、`continue`（扁平命名加 `trellis-` 前缀，调用形式 `/trellis-start` 等）
-- `.cursor/skills/trellis-{name}/SKILL.md`：5 个 trellis skill
+- `.cursor/skills/trellis-{name}/SKILL.md`：trellis skill
 - `.cursor/agents/`：`trellis-implement.md`、`trellis-check.md`、`trellis-research.md`
 - `.cursor/hooks/`：共享 Python hook 脚本（与 Claude Code 兼容）
 - `.cursor/hooks.json`：hook 配置（Cursor 用独立文件，不是 `settings.json`）
@@ -97,7 +97,7 @@ OpenCode 1.2.x 是 class-1 平台（真 hook + 真 sub-agent）：
 
 - `.opencode/commands/trellis/`：start / finish-work / continue
 - `.opencode/agents/`：`trellis-implement.md`、`trellis-check.md`、`trellis-research.md`
-- `.opencode/skills/`：5 个 trellis skill
+- `.opencode/skills/`：trellis skill
 - `.opencode/plugins/`：JS 插件：`session-start.js`、`inject-subagent-context.js`、`inject-workflow-state.js`、`inject-spec-context.js`
 - `.opencode/hooks/inject-spec-context.py`：共享的路径匹配、预算和交付状态引擎
 
@@ -114,8 +114,8 @@ trellis init -u your-name --codex
 布局：
 
 - `AGENTS.md`（仓库根）：入口文件，Codex 每个 session 自动读取（作为 prelude）
-- `.codex/prompts/`：`trellis-start.md`、`trellis-finish-work.md`、`trellis-continue.md`
-- `.codex/skills/`：5 个 trellis skill
+- `.agents/skills/trellis-{name}/SKILL.md`：trellis skill（共享层；Codex 直接读）
+- `.codex/skills/`：建成空目录，供你放自己的 skill
 - `.codex/agents/`：TOML sub-agent：`trellis-implement.toml`、`trellis-check.toml`、`trellis-research.toml`
 - `.codex/hooks/inject-workflow-state.py` + `.codex/hooks.json`：`UserPromptSubmit` workflow-state hook
 - `.codex/hooks/session-start.py`：保留的紧凑 SessionStart 兼容脚本，默认不 wiring
@@ -165,7 +165,7 @@ trellis init -u your-name --gemini
 布局：
 
 - `.gemini/commands/trellis/{name}.toml`：TOML 命令文件——`start.toml`、`finish-work.toml`、`continue.toml`
-- `.gemini/skills/trellis-{name}/SKILL.md`：5 个 trellis skill
+- `.agents/skills/trellis-{name}/SKILL.md`：trellis skill（共享层；Gemini CLI 0.40+ 直接读共享层）
 - `.gemini/agents/{name}.md`：带 pull-based prelude 的 sub-agent 定义（sub-agent 自己 `Read` 自己的 JSONL，因为 Gemini 没有 sub-agent `PreToolUse` hook）
 - `.gemini/hooks/session-start.py`：SessionStart hook
 - `.gemini/settings.json`：hook 配置（只有 SessionStart）
@@ -197,7 +197,7 @@ CodeBuddy 是完整 class-1 平台（真 hook + 真 sub-agent）。
 布局：
 
 - `.codebuddy/commands/trellis/{name}.md`：`start`、`finish-work`、`continue`
-- `.codebuddy/skills/trellis-{name}/SKILL.md`：5 个 trellis skill
+- `.codebuddy/skills/trellis-{name}/SKILL.md`：trellis skill
 - `.codebuddy/agents/{name}.md`：sub-agent 定义
 - `.codebuddy/hooks/*.py`：共享 Python hook 脚本
 - `.codebuddy/settings.json`：hook 配置（SessionStart + sub-agent `PreToolUse` 注入）
@@ -212,7 +212,7 @@ trellis init -u your-name --copilot
 
 - `.github/copilot-instructions.md`：Trellis prelude，每个 session 自动加载
 - `.github/prompts/trellis-{name}.prompt.md`：`start` / `finish-work` / `continue` 的 prompt 文件
-- `.github/skills/trellis-{name}/SKILL.md`：5 个 trellis skill
+- `.github/skills/trellis-{name}/SKILL.md`：trellis skill
 - `.github/agents/{name}.agent.md`：带 pull-based prelude 的 sub-agent 定义（Copilot 的 sub-agent hook 触发不稳定，所以让 sub-agent 自己 `Read` 自己的 JSONL）
 - `.github/copilot/hooks/*.py`：Copilot 专属 + 共享 Python hook 脚本
 - `.github/copilot/hooks.json`：hook 配置（只有 SessionStart——sub-agent `PreToolUse` 不可用）
@@ -226,8 +226,8 @@ trellis init -u your-name --droid
 Droid（factory.ai）是 class-1 平台，有 hook + sub-agent：
 
 - `.factory/commands/trellis/`：start / finish-work / continue
-- `.factory/agents/`：三个 `trellis-*` sub-agent
-- `.factory/skills/`：5 个 trellis skill
+- `.factory/droids/`：三个 `trellis-*` sub-agent
+- `.factory/skills/`：trellis skill
 - `.factory/hooks/`：SessionStart + sub-agent injection
 
 ### Pi Agent
@@ -241,7 +241,7 @@ Pi Agent 走 extension，不走 Python hook。Trellis 写入同样的 workflow �
 布局：
 
 - `.pi/prompts/trellis-{name}.md`：会话边界 prompt（`finish-work`、`continue`；`start` 只在需要手动入口的平台存在）
-- `.pi/skills/trellis-{name}/SKILL.md`：5 个 Trellis 工作流 skill
+- `.agents/skills/trellis-{name}/SKILL.md`：5 个 Trellis 工作流 skill（共享层；Pi 读共享层）
 - `.pi/agents/{name}.md`：`trellis-implement`、`trellis-check`、`trellis-research`
 - `.pi/extensions/trellis/index.ts`：会话上下文、Bash `TRELLIS_CONTEXT_ID` 传递、sub-agent JSONL 注入
 - `.pi/settings.json`：extension 注册
@@ -269,11 +269,17 @@ extension 把当前任务状态存在 `.trellis/.runtime/sessions/<session-key>.
 
 Trellis 还原生带有上面能力矩阵之外几个平台的配置器：
 
-- **Kilo**（`--kilo`）：写 `.kilocode/workflows/`（命令：`start`、`finish-work`）和 `.kilocode/skills/trellis-{name}/SKILL.md`（5 个 trellis skill）。没有 hook 集成。
+- **Kilo**（`--kilo`）：写 `.kilocode/workflows/`（命令：`start`、`finish-work`）和 `.kilocode/skills/trellis-{name}/SKILL.md`（trellis skill）。没有 hook 集成。
 - **Antigravity**（`--antigravity`）：写 Antigravity 原生的 workflow 文件（3 个命令）。
 - **Devin**（`--devin`，原 Windsurf）：写 Devin 原生的 workflow 和 skill 文件。旧的 `--windsurf` flag 仍作为已废弃的别名可用。
+- **Reasonix**（`--reasonix`）：写 `.reasonix/` 的 skill 和 sub-agent，命令调用形式是 `/skill trellis-{name}`。没有 hook，sub-agent 自己加载任务上下文。
+- **ZCode**（`--zcode`）：写 `.zcode/agents/`、`.zcode/commands/`、`.zcode/skills/`、`.zcode/hooks/`。命令用 `/trellis:` 前缀。
+- **Trae**（`--trae`）：写 `.trae/` 下的 agent、command、skill 和 Python hook（SessionStart、workflow-state、sub-agent 上下文注入）。
+- **Grok Build**（`--grok`）：写 `.grok/skills/`、`.grok/commands/`、`.grok/agents/`。sub-agent 通过 `spawn_subagent` 派发。没有 hook 集成。
+- **Kimi Code**（`--kimi`）：把 skill 写到 `.kimi-code/skills/` 和共享的 `.agents/skills/` 层；入口命令调用形式是 `/skill:trellis-{name}`。没有项目级 hook（Kimi 只支持用户级 `~/.kimi-code/config.toml`）。
+- **Snow CLI**（`--snow`）：写 `.snow/skills/`、`.snow/commands/`、`.snow/agents/`、`.snow/hooks/`（Python hook 为 session / user / sub-agent 事件输出 `additionalContext` JSON）。
 
-除了 17 个已配置平台，Trellis 还能被任何遵循 `.agents/skills/` 约定（[agentskills.io](https://agentskills.io) 规范）的 AI 编码 agent 直接使用。Codex 的 skill 就写在这个目录下，这些文件也能被该生态的其他 agent（Amp、Cline、Deep Agents、Firebender、Kimi Code CLI、Warp 等）直接读取。这些平台上你通过 `.trellis/` 核心加上各自 agent 读取的 prelude 文件来管理 Trellis。
+除了 21 个已配置平台，Trellis 还能被任何遵循 `.agents/skills/` 约定（[agentskills.io](https://agentskills.io) 规范）的 AI 编码 agent 直接使用。Codex 的 skill 就写在这个目录下，这些文件也能被该生态的其他 agent（Amp、Cline、Deep Agents、Firebender、Warp 等）直接读取。这些平台上你通过 `.trellis/` 核心加上各自 agent 读取的 prelude 文件来管理 Trellis。
 
 ### 操作系统
 

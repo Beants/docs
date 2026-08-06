@@ -31,9 +31,9 @@ trellis init -u your-name --pi
 
 `your-name` 会成为你的开发者身份，在 `.trellis/workspace/your-name/` 创建个人工作区。
 
-支持的 flag：`--claude`、`--cursor`、`--opencode`、`--codex`、`--kiro`、`--gemini`、`--qoder`、`--codebuddy`、`--copilot`、`--droid`、`--pi`、`--antigravity`、`--devin`（别名：`--windsurf`，已废弃）、`--kilo`、`--reasonix`、`--zcode`、`--omp`。
+支持的 flag：`--claude`、`--cursor`、`--opencode`、`--codex`、`--kiro`、`--gemini`、`--qoder`、`--codebuddy`、`--copilot`、`--droid`、`--pi`、`--antigravity`、`--devin`（别名：`--windsurf`，已废弃）、`--kilo`、`--reasonix`、`--zcode`、`--omp`、`--trae`、`--grok`、`--kimi`、`--snow`。
 
-除了这 17 个已配置平台，任何读取 `.agents/skills/` 规范的 AI 编码 agent（Amp、Cline、Deep Agents、Firebender、Kimi Code CLI、Warp 等）也能直接消费 Trellis：Codex 的 skill 就写在这个目录下，这些文件能被该生态的其他 agent 直接读取。
+除了这 21 个已配置平台，任何读取 `.agents/skills/` 规范的 AI 编码 agent（Amp、Cline、Deep Agents、Firebender、Warp 等）也能直接消费 Trellis：Codex 的 skill 就写在这个目录下，这些文件能被该生态的其他 agent 直接读取。
 
 ### 升级
 
@@ -74,7 +74,7 @@ trellis update    # 2. 在每个项目里：把 .trellis/ 和平台文件同步�
 | **Antigravity** | `.agent/workflows/`、`skills/`                                               |
 | **Devin**       | `.devin/workflows/`、`skills/`                                               |
 
-`.agents/skills/` 是一份跨平台共享层（[agentskills.io](https://agentskills.io) 规范），`trellis init` 会把所有 skill 都写一份到这里，供 Amp、Cline、Deep Agents、Firebender、Kimi Code CLI、Warp 等遵循 `.agents/skills/` 规范的 agent 直接读取。
+`.agents/skills/` 是一份跨平台共享层（[agentskills.io](https://agentskills.io) 规范），`trellis init` 会把所有 skill 都写一份到这里，供 Amp、Cline、Deep Agents、Firebender、Warp 等遵循 `.agents/skills/` 规范的 agent 直接读取。
 
 ### init 场景对照
 
