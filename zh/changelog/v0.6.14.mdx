@@ -3,51 +3,48 @@ title: 'v0.6.14'
 description: '2026-08-06'
 ---
 
-在同时设置 `CLAUDE_PROJECT_DIR` 的宿主上 hook 现在能正常工作；`trellis mem` 能取回被 compaction 挡住的对话。
+修复 CodeBuddy、ZCode、Trae 上的任务跟踪。`trellis mem` 现在能返回被截断的对话。
 
 ## Bug Fixes
 
-### 带 Claude 兼容别名的宿主的平台识别
+### CodeBuddy、ZCode、Trae 上任务启动后不生效
 
-CodeBuddy、ZCode、Trae 都会在自己的 `*_PROJECT_DIR` 之外再设一个 `CLAUDE_PROJECT_DIR`。`shared-hooks/inject-workflow-state.py` 和 `session-start.py` 里的 `_detect_platform` 先查这个别名，于是三者全被识别为 `claude`，context key 变成 `claude_<宿主session-id>`，与 `task.py start` 用宿主真实名字写下的文件永远对不上。
+在这三个平台上，`task.py start` 显示成功，但之后每一轮仍然说没有活动任务。Trellis 用错误的名字去读会话记录——这三家都用一个 Claude 兼容变量标识自己，而 Trellis 先查了那个变量。
 
-现象是：`task.py start` 成功、`.trellis/.runtime/sessions/<host>_<id>.json` 存在，而之后每一轮注入的仍是 `Status: no_task`。在 CodeBuddy 上两个 key 并排可见：`codebuddy_ae54840e….json` 与 `update-check-claude_ae54840e….marker`。
+在 CodeBuddy 上 hook 还找不到项目：IDE 上报的工作目录是 `/`，Trellis 直接采信了。
 
-现在该别名最后才查，并有回归测试锁定顺序。
+两个问题都已修复。跑 `trellis update` 获取新的 hook，然后重启 IDE。
 
-### hook payload 的 `cwd`
+### PreToolUse 工具名
 
-`inject-shell-session-context.py`、`inject-workflow-state.py`、`inject-subagent-context.py` 仅凭 payload 的 `cwd` 定位项目根。CodeBuddy IDE 4.10.4 在每个 hook 事件都上报 `"/"`，向上找不到 `.trellis`，于是静默返回——被调用了、什么也没做，表现与从未触发完全相同。现在会回退到进程自身的工作目录。
+这几个产品的 IDE 版和 CLI 版工具命名不同，之前注册的是 IDE 从不发送的名字。
 
-### shell-ticket 的归属校验
-
-ticket 记录的是 payload 的 `cwd`，而 `_ticket_cwd_matches_repo` 会拒绝 cwd 在仓库之外的 ticket——正确写出的 ticket 在消费时被丢弃。现在 ticket 记录解析出的项目根，宿主上报的值保留在 `host_cwd`。
-
-### PreToolUse matcher
-
-| 平台      | matcher                                           |
-| --------- | ------------------------------------------------- |
-| CodeBuddy | `execute_command\|Bash\|PowerShell`、`task\|Task` |
-| Trae      | `RunCommand\|Bash`                                |
-| Qoder     | `Bash\|run_in_terminal`                           |
-
-IDE 侧的 shell 与子 agent 工具命名和 CLI 不同，且只有较新版本才做别名映射。
+| 平台      | 现在匹配                                                |
+| --------- | ------------------------------------------------------- |
+| CodeBuddy | `execute_command`、`Bash`、`PowerShell`、`task`、`Task` |
+| Trae      | `RunCommand`、`Bash`                                    |
+| Qoder     | `Bash`、`run_in_terminal`                               |
 
 ## Enhancements
 
-### 被 compaction 挡住的对话
+### `trellis mem` 返回 compact 过的对话
 
-`trellis mem` 此前返回的是 agent 最后一个上下文窗口而非完整记录：session 一旦 compact，各适配器就丢弃那些仍在文件里的对话轮。
+会话一旦 compact，`trellis mem` 此前只返回 compact 之后幸存的部分——常常是几百轮里的两三轮。其余内容其实还在会话文件里。
 
-现在文件里的每一轮对话都进入池子，compaction 变成标记而不是替换。经历两次 compact 的 Codex session，`extract` 从 2 轮变为 18 轮；一个 Claude session 从 100 变为 1536。清洗规则不变——reasoning、工具调用、系统注入照常剥离。
+现在这些轮次会返回，并标出每次 compact 的位置。一个 compact 过两次的 Codex 会话从 2 轮变为 18 轮，一个 Claude 会话从 100 变为 1536。工具调用、reasoning 和系统提示仍照旧剥离。
 
-确实无法恢复的会明说：Codex 把 inter-agent 的 `NEW_TASK` / `MESSAGE` 存为 `encrypted_content`；Grok 把 compact 前的对话归档为 `<session>/compaction/` 下的 markdown。
+有些内容确实无法恢复，现在会明说而不是看起来完整：Codex 对 agent 之间的消息加密，Grok 把 compact 前的对话存为 `<session>/compaction/` 下的 markdown。
 
-搜索计分改为显式去重。仅在 compaction 摘要里出现过查询词的 session 不再命中，而真实对话讨论过该话题的 session 开始命中。
+搜索结果会有小幅变化。只在 compact 摘要里匹配到的会话不再命中，而真实对话涉及该话题的会话开始命中。
 
-### Grok session
+### `trellis mem` 支持 Grok 会话
 
-`trellis mem search|extract|context --platform grok` 读取 `~/.grok/sessions/<url编码的cwd>/<session-id>/chat_history.jsonl`，项目范围从目录名解析。不依赖数据库，未新增任何依赖。
+```bash
+trellis mem search "关键词" --platform grok
+trellis mem extract <session-id>
+```
+
+读取 `~/.grok/sessions/`，项目范围过滤与其他平台一致。
 
 ## Upgrade
 
