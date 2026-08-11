@@ -42,14 +42,14 @@ Trellis 支持 21 个平台（Claude Code、Cursor、OpenCode、Codex、Kiro、K
 | Sub-agent 上下文注入           |     ✅      |   ✅   |    ✅    |  ❌   |  ❌  |   ❌   |  ❌   |    ✅     |   ❌    |  ✅   |    ✅    |    ✅    |
 | Sub-agent（`trellis-*`）       |     ✅      |   ✅   |    ✅    |  ✅   |  ✅  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
 | Auto-trigger skill             |     ✅      |   ✅   |    ✅    |  ✅   |  ✅  |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
-| 显式 `/trellis:*` 命令         |     ✅      |   ✅   |    ✅    |   —   |  —   |   ✅   |  ✅   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
+| 显式 `/trellis:*` 命令         |     ✅      |   ✅   |    ✅    |   —   |  —   |   ✅   |  ⚡   |    ✅     |   ✅    |  ✅   |    ✅    |    ✅    |
 
 图例：✅ Trellis 写入配置并由平台执行 · ⚡ 部分支持（Codex 使用 `AGENTS.md` 加
 `UserPromptSubmit`；workflow breadcrumb 需要 `features.hooks = true`，0.129+
 还要走一次 `/hooks` 审批；Kiro 在 `trellis` agent 上带了每回合 `userPromptSubmit` hook，但用户需激活该 agent —— `chat.defaultAgent trellis` 或 `/agent swap`） · ❌ 平台不暴露这个事件 ·
 — 该平台没有命令原语，start / finish-work / continue 作为 skill 交付。Qoder 用的是
-`/trellis-{name}`（连字符，不是冒号），通过原生 Custom Commands 交付 `finish-work` /
-`continue`；`start` 由 SessionStart hook 自动注入。Pi Agent 走 extension，不走 Python hook 文件，
+`/trellis-{name}`（连字符，不是冒号）交付 `finish-work` / `continue`，但**只在 Qoder CLI 上有效** ——
+IDE 的 `/` 菜单列的是 Qoder 控制台里配置的指令，不读项目文件；`start` 由 SessionStart hook 自动注入。Pi Agent 走 extension，不走 Python hook 文件，
 但行为一致：会话上下文、Bash 环境变量传递、sub-agent context 注入都在 agent 动作前完成。
 
 `.kilocode/`、`.agent/`（Antigravity）、`.devin/` 只有 workflow 和 skill，没有 sub-agent 也没有 hook。`.agents/skills/` 在所有平台都会写一份，作为跨平台共享层。
@@ -170,15 +170,17 @@ trellis init -u your-name --gemini
 trellis init -u your-name --qoder
 ```
 
-Qoder 原生支持 Custom Commands（在 Agent 输入框输入 `/` 调用，项目级存放在 `<项目>/.qoder/commands/{name}.md`，要求 YAML frontmatter 包含 `name` 和 `description` 字段）。Trellis 把 session-boundary 命令放到这里，让你可以显式地调用；阶段级工作流则保留为 auto-trigger skill。
+Skill 在 Qoder IDE 和 Qoder CLI 上都生效；命令只在 CLI 上生效 —— IDE 的 `/` 菜单列的是管理员在 Qoder 控制台配置的指令，不读项目里的文件，所以 Trellis 的命令不会出现在那里。在 IDE 上用 skill：说清楚你要做什么，模型会自动触发。
 
 布局：
 
-- `.qoder/commands/trellis-{name}.md`：session-boundary 命令 —— `finish-work`、`continue`，用 `/trellis-finish-work`、`/trellis-continue` 调用（`start` 由 Qoder 的 SessionStart hook 自动注入，无需命令）
-- `.qoder/skills/trellis-{name}/SKILL.md`：auto-trigger 工作流 skill —— `brainstorm`、`before-dev`、`check`、`update-spec`、`break-loop`
+- `.qoder/skills/trellis-{name}/SKILL.md`：auto-trigger 工作流 skill —— `brainstorm`、`before-dev`、`check`、`update-spec`、`break-loop`。IDE 和 CLI 都会读。
+- `.qoder/commands/trellis-{name}.md`：session-boundary 命令 —— `finish-work`、`continue`，**在 Qoder CLI 里**用 `/trellis-finish-work`、`/trellis-continue` 调用。`start` 的上下文由 SessionStart hook 注入，所以没有 `trellis-start` 命令。
 - `.qoder/agents/{name}.md`：带 pull-based prelude 的 sub-agent 定义
-- `.qoder/hooks/session-start.py`：SessionStart hook
-- `.qoder/settings.json`：hook 配置（只有 SessionStart——Qoder 没有 sub-agent `PreToolUse` hook）
+- `.qoder/hooks/session-start.py`：SessionStart hook，覆盖 startup / clear / compact
+- `.qoder/hooks/inject-workflow-state.py`：UserPromptSubmit hook
+- `.qoder/hooks/inject-shell-session-context.py`：PreToolUse hook，匹配 `Bash|run_in_terminal`，把会话身份带进 `task.py`
+- `.qoder/settings.json`：hook 配置。Qoder 没有 sub-agent `PreToolUse` hook，所以 sub-agent 改用 pull-based prelude 自己加载上下文。
 
 ### CodeBuddy
 

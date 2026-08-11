@@ -12,18 +12,18 @@ Trellis groups the 21 configured platforms into three delivery models:
 
 **Explicit slash commands** — the user types `/trellis:<name>`; the platform injects the command file's content as a prompt.
 
-| Platform    | Location                                                                           | Invoked as         |
-| ----------- | ---------------------------------------------------------------------------------- | ------------------ |
-| Claude Code | `.claude/commands/trellis/{name}.md`                                               | `/trellis:{name}`  |
-| Cursor      | `.cursor/commands/trellis-{name}.md`                                               | `/trellis-{name}`  |
-| OpenCode    | `.opencode/commands/trellis/{name}.md`                                             | `/trellis:{name}`  |
-| Codex       | `.agents/skills/trellis-{name}/SKILL.md`                                           | `/trellis-{name}`  |
-| Gemini CLI  | `.gemini/commands/trellis/{name}.toml`                                             | `/trellis:{name}`  |
-| Qoder       | `.qoder/commands/trellis-{name}.md` (with `name` + `description` YAML frontmatter) | `/trellis-{name}`  |
-| CodeBuddy   | `.codebuddy/commands/trellis/{name}.md`                                            | `/trellis:{name}`  |
-| Droid       | `.factory/commands/trellis/{name}.md`                                              | `/trellis:{name}`  |
-| Pi Agent    | `.pi/prompts/trellis-{name}.md`                                                    | `/trellis-{name}`  |
-| Copilot     | `.github/prompts/trellis-{name}.prompt.md`                                         | prompt-file picker |
+| Platform    | Location                                   | Invoked as                         |
+| ----------- | ------------------------------------------ | ---------------------------------- |
+| Claude Code | `.claude/commands/trellis/{name}.md`       | `/trellis:{name}`                  |
+| Cursor      | `.cursor/commands/trellis-{name}.md`       | `/trellis-{name}`                  |
+| OpenCode    | `.opencode/commands/trellis/{name}.md`     | `/trellis:{name}`                  |
+| Codex       | `.agents/skills/trellis-{name}/SKILL.md`   | `/trellis-{name}`                  |
+| Gemini CLI  | `.gemini/commands/trellis/{name}.toml`     | `/trellis:{name}`                  |
+| Qoder       | `.qoder/commands/trellis-{name}.md`        | `/trellis-{name}` (Qoder CLI only) |
+| CodeBuddy   | `.codebuddy/commands/trellis/{name}.md`    | `/trellis:{name}`                  |
+| Droid       | `.factory/commands/trellis/{name}.md`      | `/trellis:{name}`                  |
+| Pi Agent    | `.pi/prompts/trellis-{name}.md`            | `/trellis-{name}`                  |
+| Copilot     | `.github/prompts/trellis-{name}.prompt.md` | prompt-file picker                 |
 
 Command files are Markdown; Gemini uses TOML (with a `prompt = """..."""` field).
 
